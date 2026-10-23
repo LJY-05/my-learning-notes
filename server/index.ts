@@ -90,6 +90,8 @@ app.get("/api/state", (_req, res) =>
     state: store.read(),
     capabilities: {
       openaiConfigured: !!process.env.OPENAI_API_KEY,
+      deepseekConfigured: !!process.env.DEEPSEEK_API_KEY,
+      deepseekModel: process.env.DEEPSEEK_MODEL || "deepseek-chat",
       model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
     },
   }),

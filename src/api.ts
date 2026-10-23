@@ -1,7 +1,12 @@
 import type { State } from "../shared/domain";
 export type Snapshot = {
   state: State;
-  capabilities: { openaiConfigured: boolean; model: string };
+  capabilities: {
+    openaiConfigured: boolean;
+    model: string;
+    deepseekConfigured: boolean;
+    deepseekModel: string;
+  };
 };
 export async function api<T = any>(
   path: string,

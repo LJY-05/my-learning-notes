@@ -465,3 +465,41 @@ test("工作区标签、侧栏折叠与Markdown预览保存", async ({ page }) =
     page.getByRole("complementary", { name: "学习上下文" }),
   ).toBeVisible();
 });
+
+test("DeepSeek模式保存与未配置密钥的明确提示", async ({ page }) => {
+  const data = await page.request.get("/api/state").then((r) => r.json());
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "设置与数据", exact: true })
+    .click();
+  await page.getByLabel("助手模式", { exact: true }).selectOption("deepseek");
+  await expect(page.getByRole("status")).toContainText("已保存");
+  await page.reload();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "设置与数据", exact: true })
+    .click();
+  await expect(page.getByLabel("助手模式", { exact: true })).toHaveValue(
+    "deepseek",
+  );
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "AI 学习助手", exact: true })
+    .click();
+  await expect(
+    page.getByText("DeepSeek · " + data.capabilities.deepseekModel, {
+      exact: true,
+    }),
+  ).toBeVisible();
+  if (!data.capabilities.deepseekConfigured) {
+    await page.getByLabel("给学习助手的消息").fill("读取今天的任务");
+    await page.getByRole("button", { name: "发送消息", exact: true }).click();
+    await expect(page.getByRole("alert")).toContainText("DeepSeek尚未配置");
+  }
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "设置与数据", exact: true })
+    .click();
+  await page.getByLabel("助手模式", { exact: true }).selectOption("mock");
+  await expect(page.getByRole("status")).toContainText("已保存");
+});

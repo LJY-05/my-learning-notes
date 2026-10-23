@@ -1106,7 +1106,9 @@ function App() {
                           ? "Mock · 基于真实记录的规则助手"
                           : s.settings.provider === "off"
                             ? "已关闭 AI 服务"
-                            : `OpenAI · ${snapshot.capabilities.model}`}
+                            : s.settings.provider === "deepseek"
+                              ? `DeepSeek · ${snapshot.capabilities.deepseekModel}`
+                              : `OpenAI · ${snapshot.capabilities.model}`}
                       </p>
                     </div>
                   </div>
@@ -2301,6 +2303,7 @@ function App() {
                       }
                     >
                       <option value="mock">Mock · 无需密钥的规则助手</option>
+                      <option value="deepseek">DeepSeek · 中文学习助手</option>
                       <option value="openai">
                         OpenAI · 服务端 Responses API
                       </option>
@@ -2308,14 +2311,19 @@ function App() {
                     </select>
                   </Field>
                   <div className="info-note">
-                    {snapshot.capabilities.openaiConfigured
-                      ? "服务端已配置模型密钥。"
-                      : "服务端尚未配置模型密钥。Mock 可直接使用。"}
+                    {s.settings.provider === "deepseek"
+                      ? snapshot.capabilities.deepseekConfigured
+                        ? "服务端已配置DeepSeek密钥。"
+                        : "DeepSeek尚未配置。请按README在本机 .env 中设置密钥并重启。"
+                      : snapshot.capabilities.openaiConfigured
+                        ? "服务端已配置模型密钥。"
+                        : "服务端尚未配置模型密钥。Mock 可直接使用。"}
                   </div>
                   <p className="muted">
-                    OpenAI 密钥只放在服务端 .env 的 OPENAI_API_KEY
-                    中，不填入网页或聊天。模型由 OPENAI_MODEL 指定，默认
-                    gpt-4.1-mini。
+                    DeepSeek 使用 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL（默认
+                    deepseek-chat）。密钥只放在服务端 .env。OpenAI 使用
+                    OPENAI_API_KEY。不要将密钥填入网页或聊天。OpenAI模型由
+                    OPENAI_MODEL 指定，默认 gpt-4.1-mini。
                   </p>
                   <h3>实习课表与负荷</h3>
                   <p>

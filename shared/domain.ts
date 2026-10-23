@@ -107,7 +107,7 @@ export const settingsSchema = z.object({
   dailyMinutes: z.number().int().min(0).max(1440),
   theme: z.enum(["light", "dark"]),
   energy: z.enum(["专注", "普通", "疲惫"]),
-  provider: z.enum(["mock", "openai", "off"]),
+  provider: z.enum(["mock", "openai", "deepseek", "off"]),
   reminders: z.boolean(),
   planStart: dateSchema,
   planEnd: dateSchema,

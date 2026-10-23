@@ -1,4 +1,5 @@
 import OpenAI from "openai";
+import { DeepSeekProvider } from "./deepseek.js";
 import { type State, localDate } from "../shared/domain.js";
 import { runTool, toolDefinitions } from "./tools.js";
 export type ChatRequest = {
@@ -129,7 +130,8 @@ export class OpenAIProvider implements Provider {
     throw Error("工具调用轮数达到上限，请缩小问题后重试");
   }
 }
-export const providers: Record<"mock" | "openai", Provider> = {
+export const providers: Record<"mock" | "openai" | "deepseek", Provider> = {
   mock: new MockProvider(),
+  deepseek: new DeepSeekProvider(),
   openai: new OpenAIProvider(),
 };
