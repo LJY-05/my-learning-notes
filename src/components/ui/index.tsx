@@ -90,14 +90,14 @@ export function Field({
 }) {
   const id = React.useId();
   return (
-    <label className={wide ? "field wide" : "field"} htmlFor={id}>
-      <span>{label}</span>
+    <div className={wide ? "field wide" : "field"}>
+      <label htmlFor={id}>{label}</label>
       {React.isValidElement(children)
         ? React.cloneElement(children as React.ReactElement<{ id: string }>, {
             id,
           })
         : children}
-    </label>
+    </div>
   );
 }
 export function Empty({ children }: { children: React.ReactNode }) {

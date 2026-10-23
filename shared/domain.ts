@@ -206,7 +206,7 @@ export function emptyState(): State {
     settings: {
       name: "佳妍",
       dailyMinutes: 120,
-      theme: "light",
+      theme: "dark",
       energy: "普通",
       provider: "mock",
       reminders: true,

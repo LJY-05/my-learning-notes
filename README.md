@@ -1,6 +1,14 @@
-# StudyBuddy · 私人学习空间
+# StudyBuddy · 学习知识工作区
 
 面向2027届道德与法治教招备考的学习管理应用。React + TypeScript + Vite、Tailwind CSS、基于 shadcn/ui 方式组织的 Radix 可访问组件、Lucide、Recharts；Express + Zod + SQLite，Drizzle 类型化表定义与 SQL 构造，Node 原生 SQLite 驱动负责事务。默认无需 API Key，Mock 规则助手可直接运行。
+
+## Obsidian 风格工作区更新
+
+界面采用炭灰背景、紫色强调色、窄工具栏、可折叠导航与可关闭工作区标签。宽度1550px及以上显示右侧学习上下文/任务属性；手机保留标签与抽屉导航。新数据库默认深色，已有用户的主题选择保留，可在右上角切换。
+
+教案、逐字稿、错题解析及备注支持Markdown编辑和预览，聊天内容也支持Markdown。预览使用DOMPurify清理HTML，不执行脚本，也不加载笔记中的外部图片。本次更新不修改已有计划或记录，不重建数据库，Mock AI保持可用。
+
+已有Windows用户升级：先在设置导出完整JSON备份，再关闭旧启动窗口。将新版本解压到另一个文件夹，用其中的BAT启动，随后在设置恢复JSON备份。不要删除或覆盖旧项目的`data`目录；确认新版本数据正确后再整理旧文件。由于新增Markdown依赖，替换代码原地升级的用户需要重新执行`npm ci`。
 
 ## Windows 10 / 11 第一次使用
 
@@ -114,14 +122,16 @@ server/tools.ts           AI工具校验、待确认写入与执行
 server/providers.ts       Provider接口、Mock与OpenAI Responses
 src/main.tsx              九个可交互页面与可复用视图
 src/components/ui/        按钮、卡片、表单、可访问Dialog
-src/style.css             Design Tokens、响应式布局与深浅主题
+src/style.css             基础样式与组件布局
+src/workspace.css         工作区主题Tokens、深浅色、标签与侧栏
+src/components/MarkdownEditor.tsx  安全Markdown编辑与预览
 public/                   正式源Excel及旧版参考文件
 data/                     本机SQLite（Git忽略）
 server/*.test.ts          后端领域与数据可靠性测试
 tests/                    Chromium全流程验收，隔离生产数据
 ```
 
-设计Token定义在 `src/style.css`：背景、语义色、字体、间距、圆角、阴影等；中文使用PingFang SC/Noto Sans SC/Microsoft YaHei回退，标题使用Noto Serif SC/Songti SC，英文用Cormorant/Palatino/Georgia回退。无需外部字体网络请求，不依赖某一种系统已安装字体才能使用。
+工作区设计Token定义在 `src/workspace.css`，基础布局保留在 `src/style.css`。使用Segoe UI/Inter及中文系统字体回退，统一无衬线字体。无需外部字体请求。
 
 ## 后续升级建议
 

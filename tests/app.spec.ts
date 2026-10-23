@@ -39,6 +39,9 @@ test("正式导入、九个页面、手机布局与主题", async ({ page }) => 
     .getByRole("navigation")
     .getByRole("button", { name: "今日空间", exact: true })
     .click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.getByRole("button", { name: "切换主题" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "light");
   await page.getByRole("button", { name: "切换主题" }).click();
   await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
   await page.screenshot({
@@ -277,13 +280,11 @@ test("Excel重复导入不新增、完整JSON备份恢复与无效备份拒绝",
   await page.getByLabel("你的名字").fill("临时名字");
   await page.getByRole("button", { name: "保存偏好", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("已保存");
-  await page
-    .locator('input[type=file][accept=".json"]')
-    .setInputFiles({
-      name: "backup.json",
-      mimeType: "application/json",
-      buffer: Buffer.from(JSON.stringify(saved)),
-    });
+  await page.locator('input[type=file][accept=".json"]').setInputFiles({
+    name: "backup.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(JSON.stringify(saved)),
+  });
   await page
     .getByRole("button", { name: "我已备份，确认覆盖并恢复", exact: true })
     .click();
@@ -294,13 +295,11 @@ test("Excel重复导入不新增、完整JSON备份恢复与无效备份拒绝",
   expect(restored.exams).toEqual(saved.exams);
   expect(restored.interviews).toEqual(saved.interviews);
   expect(restored.settings).toEqual(saved.settings);
-  await page
-    .locator('input[type=file][accept=".json"]')
-    .setInputFiles({
-      name: "invalid.json",
-      mimeType: "application/json",
-      buffer: Buffer.from('{"version":2}'),
-    });
+  await page.locator('input[type=file][accept=".json"]').setInputFiles({
+    name: "invalid.json",
+    mimeType: "application/json",
+    buffer: Buffer.from('{"version":2}'),
+  });
   await page
     .getByRole("button", { name: "我已备份，确认覆盖并恢复", exact: true })
     .click();
@@ -414,4 +413,55 @@ test("API写入校验、过期方案、完成记录保护与导出工作簿", as
     data: { revision: state.revision, backup: before, confirmed: true },
   });
   expect(restored.ok()).toBe(true);
+});
+
+test("工作区标签、侧栏折叠与Markdown预览保存", async ({ page }) => {
+  await page.getByRole("tab", { name: "学习计划", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "新增任务", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "展开或折叠侧栏" }).click();
+  await expect(page.getByRole("navigation")).toBeHidden();
+  await page.getByRole("tab", { name: "AI 学习助手", exact: true }).click();
+  await expect(page.getByLabel("给学习助手的消息")).toBeVisible();
+  await page.getByRole("button", { name: "关闭标签：AI 学习助手" }).click();
+  await expect(
+    page.getByRole("tab", { name: "AI 学习助手", exact: true }),
+  ).toHaveCount(0);
+  await page.getByRole("button", { name: "展开或折叠侧栏" }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "面试训练", exact: true })
+    .click();
+  await page.getByRole("button", { name: "新建训练教案", exact: true }).click();
+  await page.getByLabel("试讲篇目", { exact: true }).fill("Markdown工作区验收");
+  const field = page.locator(".field").filter({ hasText: "逐字稿" });
+  await page
+    .getByLabel("逐字稿", { exact: true })
+    .fill(
+      '# 课堂导入\n\n**生命的价值**\n\n- 先讨论\n- 再总结\n\n<img src=x onerror="window.markdownInjected=true"><script>window.markdownInjected=true</script>',
+    );
+  await field.getByRole("button", { name: "预览", exact: true }).click();
+  await expect(field.locator(".markdown-body h1")).toHaveText("课堂导入");
+  await expect(field.locator(".markdown-body strong")).toHaveText("生命的价值");
+  await expect(
+    field.locator(".markdown-body img,.markdown-body script"),
+  ).toHaveCount(0);
+  expect(
+    await page.evaluate(() => Boolean((window as any).markdownInjected)),
+  ).toBe(false);
+  await field.getByRole("button", { name: "编辑", exact: true }).click();
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await page.reload();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "面试训练", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Markdown工作区验收", exact: true }),
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1650, height: 1000 });
+  await expect(
+    page.getByRole("complementary", { name: "学习上下文" }),
+  ).toBeVisible();
 });

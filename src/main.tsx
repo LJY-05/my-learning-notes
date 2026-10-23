@@ -31,6 +31,10 @@ import {
   Pause,
   CheckCheck,
   AlertCircle,
+  PanelLeftClose,
+  PanelRight,
+  FileText,
+  X,
 } from "lucide-react";
 import Chart from "./components/StudyChart";
 import { Button, Card, Badge, Modal, Field, Empty } from "./components/ui";
@@ -47,7 +51,9 @@ import {
   progress,
   uid,
 } from "../shared/domain";
+import MarkdownEditor, { MarkdownView } from "./components/MarkdownEditor";
 import "./style.css";
+import "./workspace.css";
 const nav = [
   ["今日空间", LayoutDashboard],
   ["AI 学习助手", Sparkles],
@@ -88,6 +94,9 @@ function App() {
     [date, setDate] = useState(localDate()),
     [query, setQuery] = useState(""),
     [menu, setMenu] = useState(false),
+    [navCollapsed, setNavCollapsed] = useState(false),
+    [openTabs, setOpenTabs] = useState([0, 2, 1]),
+    [focusedTask, setFocusedTask] = useState<string | null>(null),
     [view, setView] = useState("每日"),
     [status, setStatus] = useState("全部"),
     [editor, setEditor] = useState<Editor | null>(null),
@@ -106,6 +115,15 @@ function App() {
     [chatting, setChatting] = useState(false),
     [timer, setTimer] = useState({ seconds: 0, running: false, start: "" }),
     [timingInterview, setTimingInterview] = useState(false);
+  useEffect(() => {
+    setOpenTabs((tabs) => (tabs.includes(page) ? tabs : [...tabs, page]));
+  }, [page]);
+  const closeTab = (id: number) => {
+    const remaining = openTabs.filter((i) => i !== id);
+    if (!remaining.length) return;
+    setOpenTabs(remaining);
+    if (page === id) setPage(remaining[remaining.length - 1]);
+  };
   const s = snapshot?.state;
   const load = async () => {
     try {
@@ -127,7 +145,7 @@ function App() {
     }
   }, [conversation]);
   useEffect(() => {
-    document.documentElement.dataset.theme = s?.settings.theme || "light";
+    document.documentElement.dataset.theme = s?.settings.theme || "dark";
   }, [s?.settings.theme]);
   useEffect(() => {
     if (!timer.running) return;
@@ -162,7 +180,8 @@ function App() {
   };
   const settings = (patch: Partial<State["settings"]>) =>
     run(() => mutate("/settings", { settings: { ...s!.settings, ...patch } }));
-  const openTask = (task?: Task) =>
+  const openTask = (task?: Task) => (
+    setFocusedTask(task?.id || null),
     setEditor({
       type: "task",
       data: task
@@ -181,7 +200,8 @@ function App() {
             kind: "其他",
             deadline: "",
           },
-    });
+    })
+  );
   const openWrong = (wrong?: Wrong) =>
     setEditor({
       type: "wrong",
@@ -281,6 +301,7 @@ function App() {
         .includes(query.toLowerCase()) &&
       (status === "全部" || t.status === status),
   );
+  const focused = s?.tasks.find((t) => t.id === focusedTask && !t.deleted);
   const activeProposal = s?.proposals.filter((p) => !p.confirmed).at(-1);
   const pendingActions =
     s?.logs
@@ -585,14 +606,10 @@ function App() {
           ))}
         </select>
       ) : type === "textarea" ? (
-        <textarea
-          rows={4}
+        <MarkdownEditor
           value={editor!.data[key] ?? ""}
-          onChange={(e) =>
-            setEditor((ed) => ({
-              ...ed!,
-              data: { ...ed!.data, [key]: e.target.value },
-            }))
+          onChange={(value) =>
+            setEditor((ed) => ({ ...ed!, data: { ...ed!.data, [key]: value } }))
           }
         />
       ) : (
@@ -619,7 +636,47 @@ function App() {
     </Field>
   );
   return (
-    <div className="app-shell">
+    <div className={"app-shell " + (navCollapsed ? "nav-collapsed" : "")}>
+      <div className="workspace-ribbon">
+        <div className="vault-gem" title="StudyBuddy">
+          ◇
+        </div>
+        <button
+          aria-label="展开或折叠侧栏"
+          aria-expanded={!navCollapsed}
+          onClick={() => setNavCollapsed(!navCollapsed)}
+        >
+          <PanelLeftClose size={19} />
+        </button>
+        <button
+          aria-label="快速查找任务"
+          onClick={() => {
+            setPage(2);
+            setQuery("");
+          }}
+        >
+          <Search size={19} />
+        </button>
+        <button
+          aria-label="打开学习日历"
+          onClick={() => {
+            setPage(2);
+            setView("月历");
+          }}
+        >
+          <CalendarDays size={19} />
+        </button>
+        <button aria-label="打开AI工作区" onClick={() => setPage(1)}>
+          <Sparkles size={19} />
+        </button>
+        <button
+          className="ribbon-settings"
+          aria-label="工作区设置"
+          onClick={() => setPage(8)}
+        >
+          <Settings size={19} />
+        </button>
+      </div>
       <aside className={menu ? "sidebar open" : "sidebar"}>
         <a
           className="brand"
@@ -633,11 +690,11 @@ function App() {
             <Leaf size={22} />
           </span>
           <span>
-            StudyBuddy<small>YOUR QUIET STUDY SPACE</small>
+            StudyBuddy<small>个人学习知识库</small>
           </span>
         </a>
         <div className="sidebar-label">
-          我的学习空间 <span>V1.0</span>
+          文件与工作区 <span>⌄</span>
         </div>
         <nav>
           {nav.map(([label, Icon], i) => (
@@ -692,6 +749,46 @@ function App() {
         />
       )}
       <main>
+        <div
+          className="workspace-tabs"
+          role="tablist"
+          aria-label="已打开的工作区"
+        >
+          {openTabs.map((i) => {
+            const Icon = nav[i][1];
+            return (
+              <div
+                className={"workspace-tab " + (page === i ? "active" : "")}
+                key={i}
+              >
+                <button
+                  role="tab"
+                  aria-selected={page === i}
+                  onClick={() => setPage(i)}
+                >
+                  <Icon size={14} />
+                  {nav[i][0]}
+                </button>
+                {openTabs.length > 1 && (
+                  <button
+                    className="close-tab"
+                    aria-label={"关闭标签：" + nav[i][0]}
+                    onClick={() => closeTab(i)}
+                  >
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+          <button
+            className="new-workspace-tab"
+            aria-label="打开计划标签"
+            onClick={() => setPage(2)}
+          >
+            <Plus size={16} />
+          </button>
+        </div>
         <header className="topbar">
           <div>
             <Button
@@ -802,26 +899,11 @@ function App() {
                     </Button>
                   </div>
                 </div>
-                <div className="hero-art" aria-hidden="true">
-                  <div className="art-orbit" />
-                  <div className="art-leaf leaf-one" />
-                  <div className="art-leaf leaf-two" />
-                  <div className="art-leaf leaf-three" />
-                  <div className="art-stem" />
-                  <div className="paper-card">
-                    <span>note to self</span>
-                    <p>
-                      慢慢来，
-                      <br />
-                      你正在成为
-                      <br />
-                      想成为的人。
-                    </p>
-                    <Leaf size={22} />
-                  </div>
-                  <span className="art-caption">
-                    a quiet mind, a growing you.
-                  </span>
+                <div className="daily-note-outline">
+                  <FileText size={24} />
+                  <span>DAILY NOTE</span>
+                  <strong>{date}</strong>
+                  <p>记录 · 回顾 · 连接知识</p>
                 </div>
               </section>
               <div className="energy-row">
@@ -1097,13 +1179,13 @@ function App() {
                             ? s.settings.name
                             : "Study Companion"}
                         </small>
-                        <p>{m.content}</p>
+                        <MarkdownView value={m.content} />
                       </div>
                     ))}
                   {stream && (
                     <div className="message assistant">
                       <small>Study Companion</small>
-                      <p>{stream}</p>
+                      <MarkdownView value={stream} />
                     </div>
                   )}
                   {chatting && !stream && (
@@ -2383,6 +2465,111 @@ function App() {
           </footer>
         </div>
       </main>
+      <aside className="workspace-inspector" aria-label="学习上下文">
+        <div className="inspector-heading">
+          <PanelRight size={15} /> {focused ? "任务属性" : "学习上下文"}
+        </div>
+        {focused ? (
+          <>
+            <div className="inspector-title">
+              <FileText size={18} />
+              <h3>{focused.title}</h3>
+            </div>
+            <dl className="detail-list">
+              <div>
+                <dt>科目</dt>
+                <dd>{focused.subject}</dd>
+              </div>
+              <div>
+                <dt>日期</dt>
+                <dd>{focused.date}</dd>
+              </div>
+              <div>
+                <dt>状态</dt>
+                <dd>{focused.status}</dd>
+              </div>
+              <div>
+                <dt>预计时间</dt>
+                <dd>{focused.estimatedMinutes ?? "待补充"} 分钟</dd>
+              </div>
+            </dl>
+            <Button variant="outline" onClick={() => openTask(focused)}>
+              编辑任务
+            </Button>
+            <h4>关联笔记</h4>
+            <MarkdownView value={focused.note || "暂无关联笔记。"} />
+          </>
+        ) : (
+          <>
+            <h3>{date}</h3>
+            <div className="inspector-section">
+              <h4>今日概览</h4>
+              <dl className="detail-list">
+                <div>
+                  <dt>任务</dt>
+                  <dd>
+                    {dayProgress.done} / {dayProgress.total}
+                  </dd>
+                </div>
+                <div>
+                  <dt>到期复习</dt>
+                  <dd>{due.length} 项</dd>
+                </div>
+                <div>
+                  <dt>课务状态</dt>
+                  <dd>{teaching?.confirmed ? teaching.load : "待确认"}</dd>
+                </div>
+              </dl>
+            </div>
+            <div className="inspector-section">
+              <h4>学习路径</h4>
+              {[
+                "背诵与回忆",
+                "3600 错题二轮",
+                "6600 定向补漏",
+                "学科第二套题",
+              ].map((x, i) => (
+                <div className="knowledge-link" key={x}>
+                  <span>0{i + 1}</span>
+                  <button
+                    onClick={() => {
+                      setPage(2);
+                      setView("全部");
+                      setQuery(
+                        i === 0
+                          ? "背诵"
+                          : i === 1
+                            ? "3600"
+                            : i === 2
+                              ? "6600"
+                              : "第二套",
+                      );
+                    }}
+                  >
+                    {x}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <div className="inspector-section">
+              <h4>学习助手</h4>
+              <p>
+                {s.settings.provider === "mock"
+                  ? "Mock 模式 · 依据真实计划提供建议"
+                  : "在独立工作区整理计划与建议"}
+              </p>
+              <Button variant="outline" onClick={() => setPage(1)}>
+                <Sparkles size={14} />
+                打开助手
+              </Button>
+            </div>
+            <div className="inspector-section">
+              <h4>笔记格式</h4>
+              <p>教案、逐字稿与错题解析支持 Markdown，编辑时可切换预览。</p>
+            </div>
+          </>
+        )}
+      </aside>
       {editor && (
         <Modal
           title={

@@ -7,6 +7,11 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (
+            id.includes("node_modules/marked/") ||
+            id.includes("node_modules/dompurify/")
+          )
+            return "markdown";
+          if (
             id.includes("node_modules/recharts") ||
             id.includes("node_modules/d3-") ||
             id.includes("node_modules/victory")
