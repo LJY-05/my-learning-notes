@@ -3,3 +3,6 @@ dist/
 *.tsbuildinfo
 test-results/
 playwright-report/
+.env
+data/*.sqlite*
+data/*.db*

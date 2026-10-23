@@ -1,131 +1,417 @@
 import { test, expect } from "@playwright/test";
-import { mkdirSync } from "node:fs";
 import { resolve } from "node:path";
-const artifacts = resolve("test-results/artifacts");
-
-test("完整学习流程、持久化、Excel备份与手机布局", async ({ page }) => {
-  mkdirSync(artifacts, { recursive: true });
-  await page.clock.install({ time: new Date("2026-10-23T12:00:00") });
-  const errors: string[] = [];
+import { mkdirSync } from "node:fs";
+const errors: string[] = [];
+test.beforeEach(async ({ page }) => {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "今天，也向上岸靠近一点。" }),
+    page.getByRole("heading", { name: "把今天，学成喜欢的样子。" }),
   ).toBeVisible();
+  await page.getByLabel("选定日期").fill("2026-10-23");
+});
+test("正式导入、九个页面、手机布局与主题", async ({ page }) => {
+  mkdirSync("test-results/artifacts", { recursive: true });
+  await expect(page.getByText("317", { exact: false }).first()).toBeVisible();
   await page.screenshot({
-    path: resolve(artifacts, "studybuddy-desktop.png"),
+    path: "test-results/artifacts/studybuddy-v1-desktop.png",
     fullPage: true,
     animations: "disabled",
   });
-  await page.locator("nav").getByRole("button", { name: "每日计划" }).click();
-  await expect(page.locator(".task-card")).toHaveCount(28);
-  const first = page.locator(".task-card").first();
-  await first.getByRole("button", { name: "新背 / 闭卷输出" }).click();
-  await expect(
-    first.getByRole("button", { name: "新背 / 闭卷输出" }),
-  ).toHaveClass("checked");
-  await first.getByRole("button", { name: "详情与顺延" }).click();
+  for (const name of [
+    "AI 学习助手",
+    "学习计划",
+    "遗忘曲线",
+    "错题管理",
+    "真题与专项",
+    "面试训练",
+    "数据分析",
+    "设置与数据",
+  ]) {
+    await page
+      .getByRole("navigation")
+      .getByRole("button", { name, exact: true })
+      .click();
+    await expect(page.locator("h1")).toBeVisible();
+    await expect(page.getByRole("alert")).toHaveCount(0);
+  }
   await page
-    .getByLabel("学习内容", { exact: true })
-    .fill("教育与教育学① · 已修改");
-  await page.getByLabel("安排日期").fill("2026-11-05");
-  await page.getByLabel("学习备注").fill("重点区分教育属性");
-  await page.getByRole("button", { name: "保存修改" }).click();
-  await page.reload();
-  await page.locator("nav").getByRole("button", { name: "每日计划" }).click();
-  await expect(page.locator(".task-card").first()).toContainText(
-    "教育与教育学① · 已修改",
-  );
-  await expect(page.locator(".task-card").first()).toContainText("2026-11-05");
-  await page.locator("nav").getByRole("button", { name: "遗忘曲线" }).click();
-  await expect(page.locator(".review-row")).toHaveCount(5);
-  await page.getByTitle("完成复习").first().click();
-  await expect(page.locator(".review-row")).toHaveCount(4);
-  await page.locator("nav").getByRole("button", { name: "错题本" }).click();
-  await page.getByRole("button", { name: "记录错题", exact: true }).click();
-  await page.getByLabel("知识点", { exact: true }).fill("负强化与惩罚");
-  await page.getByLabel("错题 / 解析 / 备注").fill("去除厌恶刺激是负强化");
-  await page.getByRole("button", { name: "保存记录" }).click();
-  await expect(page.locator(".mistake-card")).toHaveCount(1);
-  await page.getByRole("button", { name: "完成复习", exact: true }).click();
-  await expect(page.locator(".mistake-card")).toContainText("已复习 1 次");
-  await page.locator("nav").getByRole("button", { name: "真题训练" }).click();
-  await page.getByRole("button", { name: "记录训练" }).click();
-  await page.getByLabel("套卷名称").fill("2025模拟卷");
-  await page.getByLabel("总题数").fill("100");
-  await page.getByLabel("正确题数").fill("82");
-  await page.getByLabel("用时（分钟）").fill("90");
-  await page.getByLabel("薄弱模块").fill("教育学");
-  await page.getByRole("button", { name: "保存记录" }).click();
-  await expect(page.locator("tbody")).toContainText("82%");
-  const before = await page.evaluate(() =>
-    localStorage.getItem("studybuddy-v1"),
-  );
-  const download = page.waitForEvent("download");
-  await page.getByRole("button", { name: "导出 Excel" }).click();
-  const file = await download;
-  await file.saveAs(resolve(artifacts, "studybuddy-test-backup.xlsx"));
-  await page.evaluate(() => localStorage.clear());
-  await page.reload();
-  page.once("dialog", (d) => d.accept());
-  await page
-    .locator("input[type=file]")
-    .setInputFiles(resolve(artifacts, "studybuddy-test-backup.xlsx"));
-  await expect(page.getByRole("status")).toContainText("备份导入成功");
-  expect(await page.evaluate(() => localStorage.getItem("studybuddy-v1"))).toBe(
-    before,
-  );
-  await page.locator("nav").getByRole("button", { name: "学习日历" }).click();
-  await expect(page.locator(".calendar-cell")).not.toHaveCount(0);
-  await page.locator("nav").getByRole("button", { name: "学习统计" }).click();
-  await expect(page.getByText("真题平均正确率：82%")).toBeVisible();
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator(".mobile-menu").click();
-  await page
-    .locator("nav")
-    .getByRole("button", { name: "工作台", exact: true })
+    .getByRole("navigation")
+    .getByRole("button", { name: "今日空间", exact: true })
     .click();
+  await page.getByRole("button", { name: "切换主题" }).click();
+  await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+  await page.screenshot({
+    path: "test-results/artifacts/studybuddy-v1-dark.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await page.getByRole("button", { name: "切换主题" }).click();
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "test-results/artifacts/studybuddy-v1-mobile.png",
+    fullPage: true,
+    animations: "disabled",
+  });
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await page.getByRole("button", { name: "打开导航" }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "新增任务", exact: true }),
+  ).toBeVisible();
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBe(true);
+  expect(errors).toEqual([]);
+});
+test("任务新增编辑、SQLite持久化、完成及唯一复习、延期与恢复", async ({
+  page,
+}) => {
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await page.getByRole("button", { name: "新增任务", exact: true }).click();
+  await page.getByLabel("任务内容", { exact: true }).fill("浏览器验收背诵");
+  await page.getByLabel("预计分钟（未知请留空）").fill("20");
+  await page.getByLabel("实际学习分钟").fill("18");
+  await page
+    .getByRole("combobox", { name: "任务类型", exact: true })
+    .selectOption("背诵");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  const card = page.locator(".task-card").filter({ hasText: "浏览器验收背诵" });
+  await expect(card).toBeVisible();
+  await page.reload();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await expect(card).toBeVisible();
+  await card
+    .getByRole("button", { name: "完成任务：浏览器验收背诵", exact: true })
+    .click();
+  await expect(card).toHaveClass(/is-done/);
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "遗忘曲线", exact: true })
+    .click();
+  await expect(page.locator(".review-grid>.card")).toHaveCount(5);
+  await page
+    .getByRole("button", { name: "完成这次复习", exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "完成这次复习", exact: true }),
+  ).toHaveCount(4);
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  page.once("dialog", (d) => d.accept());
+  await card
+    .getByRole("button", { name: "撤销完成：浏览器验收背诵", exact: true })
+    .click();
+  await expect(card).not.toHaveClass(/is-done/);
+  await card
+    .getByRole("button", { name: "完成任务：浏览器验收背诵", exact: true })
+    .click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "遗忘曲线", exact: true })
+    .click();
+  await expect(page.locator(".review-grid>.card")).toHaveCount(5);
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await card
+    .getByRole("button", { name: "编辑：浏览器验收背诵", exact: true })
+    .click();
+  await page.getByLabel("安排日期", { exact: true }).fill("2026-10-24");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await page.getByLabel("选定日期").fill("2026-10-24");
+  await expect(card).toBeVisible();
+  await card
+    .getByRole("button", { name: "编辑：浏览器验收背诵", exact: true })
+    .click();
+  page.once("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "删除任务", exact: true }).click();
+  await expect(card).toHaveCount(0);
+  await page.getByRole("button", { name: "恢复", exact: true }).click();
+  await expect(card).toBeVisible();
+  expect(errors).toEqual([]);
+});
+test("错题二轮、学科第二套真实计数、试讲教案保存", async ({ page }) => {
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "错题管理", exact: true })
+    .click();
+  await page.getByRole("button", { name: "记录错题", exact: true }).click();
+  await page.getByLabel("知识点 / 错题原文").fill("负强化与惩罚");
+  await page
+    .getByLabel("正确答案", { exact: true })
+    .fill("去除厌恶刺激是负强化");
+  await page.getByLabel("个人解析（原始内容）").fill("与呈现厌恶刺激区别");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "负强化与惩罚" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "再次错误", exact: true }).click();
+  await expect(page.getByText("累计错误 2 次", { exact: false })).toBeVisible();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "真题与专项", exact: true })
+    .click();
+  await expect(page.getByText("0", { exact: false }).first()).toBeVisible();
+  await page
+    .getByRole("button", { name: "记录套卷 / 专项", exact: true })
+    .click();
+  await page.getByLabel("套卷 / 练习名称").fill("学科第二套第一章");
+  await page.getByLabel("科目分类").selectOption("道德与法治第二套题");
+  await page.getByLabel("本次题数").fill("20");
+  await page.getByLabel("正确题数").fill("16");
+  await page.getByLabel("错题数量").fill("4");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await expect(page.getByText("80", { exact: false }).first()).toBeVisible();
+  await expect(page.getByText("总题量 待确认", { exact: false })).toBeVisible();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "面试训练", exact: true })
+    .click();
+  await page.getByRole("button", { name: "新建训练教案", exact: true }).click();
+  await page.getByLabel("试讲篇目").fill("敬畏生命");
+  await page.getByLabel("教学目标", { exact: true }).fill("理解生命的价值");
+  await page
+    .getByLabel("逐字稿", { exact: true })
+    .fill("同学们，今天从一段真实经历开始。");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "敬畏生命", exact: true }),
+  ).toBeVisible();
+  await page.reload();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "面试训练", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "敬畏生命", exact: true }),
+  ).toBeVisible();
+});
+test("Mock AI流式候选、明确确认后执行、重复确认与失效方案拒绝", async ({
+  page,
+}) => {
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "AI 学习助手", exact: true })
+    .click();
+  await page
+    .getByLabel("给学习助手的消息")
+    .fill("今天只有两个小时，帮我重新安排");
+  await page.getByRole("button", { name: "发送消息", exact: true }).click();
+  await expect(page.getByRole("heading", { name: /候选安排/ })).toBeVisible();
+  await expect(page.getByText("尚未执行", { exact: true })).toBeVisible();
+  mkdirSync("test-results/artifacts", { recursive: true });
   await page.screenshot({
-    path: resolve(artifacts, "studybuddy-mobile.png"),
+    path: "test-results/artifacts/studybuddy-v1-ai.png",
     fullPage: true,
     animations: "disabled",
   });
-  expect(errors).toEqual([]);
+  await page
+    .getByRole("button", { name: "确认并执行以上日期调整", exact: true })
+    .click();
+  await expect(page.getByRole("heading", { name: /候选安排/ })).toHaveCount(0);
+  await page.getByLabel("给学习助手的消息").fill("新增任务：AI确认测试任务");
+  await page.getByRole("button", { name: "发送消息", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "待确认：新增任务" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "确认执行此操作", exact: true })
+    .click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await expect(
+    page.locator(".task-card").filter({ hasText: "AI确认测试任务" }),
+  ).toBeVisible();
+});
+test("Excel重复导入不新增、完整JSON备份恢复与无效备份拒绝", async ({
+  page,
+}) => {
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "设置与数据", exact: true })
+    .click();
+  const count = await page.request
+    .get("/api/state")
+    .then((r) => r.json())
+    .then((r) => r.state.tasks.length);
+  await page
+    .locator('input[type=file][accept=".xlsx,.xls"]')
+    .setInputFiles(
+      resolve("public/StudyBuddy_备考计划_结合实习课表调整版.xlsx"),
+    );
+  await expect(
+    page.getByText("重复文件 · 不会再次创建", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "确认导入", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("未重复创建任务");
+  expect(
+    await page.request
+      .get("/api/state")
+      .then((r) => r.json())
+      .then((r) => r.state.tasks.length),
+  ).toBe(count);
+  const saved = await page.request.get("/api/backup").then((r) => r.json());
+  await page.getByLabel("你的名字").fill("临时名字");
+  await page.getByRole("button", { name: "保存偏好", exact: true }).click();
+  await expect(page.getByRole("status")).toContainText("已保存");
+  await page
+    .locator('input[type=file][accept=".json"]')
+    .setInputFiles({
+      name: "backup.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(saved)),
+    });
+  await page
+    .getByRole("button", { name: "我已备份，确认覆盖并恢复", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("完整备份已恢复");
+  const restored = await page.request.get("/api/backup").then((r) => r.json());
+  expect(restored.tasks).toEqual(saved.tasks);
+  expect(restored.wrongs).toEqual(saved.wrongs);
+  expect(restored.exams).toEqual(saved.exams);
+  expect(restored.interviews).toEqual(saved.interviews);
+  expect(restored.settings).toEqual(saved.settings);
+  await page
+    .locator('input[type=file][accept=".json"]')
+    .setInputFiles({
+      name: "invalid.json",
+      mimeType: "application/json",
+      buffer: Buffer.from('{"version":2}'),
+    });
+  await page
+    .getByRole("button", { name: "我已备份，确认覆盖并恢复", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("校验失败");
+  await page.getByRole("button", { name: "关闭窗口", exact: true }).click();
+  const final = await page.request.get("/api/backup").then((r) => r.json());
+  expect(final.tasks).toEqual(saved.tasks);
 });
 
-test("原始Excel导入、智能顺延与撤销后复习去重", async ({ page }) => {
-  await page.clock.install({ time: new Date("2026-10-23T12:00:00") });
-  await page.goto("/");
-  page.once("dialog", (d) => d.accept());
-  await page
-    .locator("input[type=file]")
-    .setInputFiles(resolve("public/原始学习计划.xlsx"));
-  await expect(page.getByRole("status")).toContainText("28天原始计划导入成功");
-  await page.locator("nav").getByRole("button", { name: "每日计划" }).click();
-  await expect(page.locator(".task-card")).toHaveCount(28);
-  page.once("dialog", (d) => d.accept("2026-10-25"));
-  await page.getByRole("button", { name: "智能顺延" }).click();
-  const records = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("studybuddy-v1")!),
-  );
-  expect(records.records.D1.date).toBe("2026-10-25");
-  expect(records.records.D2.date).toBe("2026-10-26");
-  expect(records.plans[0].date).toBe("2026-10-21");
-  expect(records.records.D1.doneAt).toBeUndefined();
-  const first = page.locator(".task-card").first();
-  await first.getByRole("button", { name: "新背 / 闭卷输出" }).click();
-  page.once("dialog", (d) => d.accept());
-  await first.getByRole("button", { name: "新背 / 闭卷输出" }).click();
-  await first.getByRole("button", { name: "新背 / 闭卷输出" }).click();
-  const state = await page.evaluate(() =>
-    JSON.parse(localStorage.getItem("studybuddy-v1")!),
-  );
-  expect(state.reviews).toHaveLength(5);
-  expect(new Set(state.reviews.map((r: { id: string }) => r.id)).size).toBe(5);
-  expect(state.records.D1.history.length).toBe(4);
+test("API写入校验、过期方案、完成记录保护与导出工作簿", async ({ page }) => {
+  const read = () =>
+    page.request
+      .get("/api/state")
+      .then((r) => r.json())
+      .then((r) => r.state);
+  const before = await read();
+  const headers = { "X-StudyBuddy-Intent": "user" };
+  const missingIntent = await page.request.post("/api/settings", {
+    data: { revision: before.revision, settings: before.settings },
+  });
+  expect(missingIntent.status()).toBe(403);
+  const stale = await page.request.post("/api/settings", {
+    headers,
+    data: { revision: before.revision - 1, settings: before.settings },
+  });
+  expect(stale.status()).toBe(400);
+  const invalid = await page.request.post("/api/exams", {
+    headers,
+    data: {
+      revision: before.revision,
+      entry: { name: "无效试卷", total: 10, correct: 11 },
+    },
+  });
+  expect(invalid.status()).toBe(400);
+  let state = await read();
+  const created = await page.request
+    .post("/api/tasks", {
+      headers,
+      data: {
+        revision: state.revision,
+        task: {
+          subject: "教综",
+          module: "测试",
+          title: "预算冲突验收",
+          date: "2026-10-29",
+          estimatedMinutes: 20,
+          actualMinutes: 18,
+          priority: "高",
+          status: "未开始",
+          source: "验收",
+          note: "",
+          mastery: "未评估",
+          kind: "背诵",
+          deadline: null,
+        },
+      },
+    })
+    .then((r) => r.json());
+  expect(created.actualMinutes).toBe(18);
+  state = await read();
+  const proposal = await page.request
+    .post("/api/schedule/propose", {
+      headers,
+      data: { revision: state.revision, date: "2026-10-29", minutes: 60 },
+    })
+    .then((r) => r.json());
+  expect(proposal.selected).toContain(created.id);
+  expect(proposal.unknown.length).toBeGreaterThan(0);
+  state = await read();
+  await page.request.post("/api/tasks/" + created.id + "/complete", {
+    headers,
+    data: { revision: state.revision },
+  });
+  state = await read();
+  const conflict = await page.request.post("/api/schedule/confirm", {
+    headers,
+    data: { revision: state.revision, id: proposal.id, confirmed: true },
+  });
+  expect(conflict.status()).toBe(400);
+  expect((await conflict.json()).error).toContain("数据已");
+  expect(
+    (await read()).tasks.find((t: any) => t.id === created.id).status,
+  ).toBe("已完成");
+  const workbook = await page.request.get("/api/export");
+  expect(workbook.ok()).toBe(true);
+  expect(workbook.headers()["content-type"]).toContain("spreadsheetml");
+  expect((await workbook.body()).length).toBeGreaterThan(30000);
+  state = await read();
+  await page.request.post("/api/settings", {
+    headers,
+    data: {
+      revision: state.revision,
+      settings: { ...state.settings, provider: "off" },
+    },
+  });
+  state = await read();
+  const disabled = await page.request.post("/api/chat", {
+    headers,
+    data: {
+      revision: state.revision,
+      text: "你好",
+      date: "2026-10-23",
+      conversationId: "off-test",
+    },
+  });
+  expect(disabled.status()).toBe(400);
+  expect((await disabled.json()).error).toContain("已关闭");
+  state = await read();
+  const restored = await page.request.post("/api/restore", {
+    headers,
+    data: { revision: state.revision, backup: before, confirmed: true },
+  });
+  expect(restored.ok()).toBe(true);
 });
