@@ -16,8 +16,11 @@ export const taskSchema = z.object({
   title: z.string().min(1).max(2000),
   date: dateSchema,
   originalDate: dateSchema,
-  estimatedMinutes: z.number().int().min(1).max(1440).nullable(),
-  actualMinutes: z.number().int().min(0).max(1440),
+  estimatedMinutes: z.preprocess(
+    (v) => (v === 0 ? null : v),
+    z.number().int().min(1).max(1440).nullable(),
+  ),
+  actualMinutes: z.number().min(0).max(1440),
   priority: z.enum(["高", "中", "低"]),
   status: z.enum(["未开始", "进行中", "已完成", "待确认"]),
   source: text,
@@ -161,8 +164,11 @@ export const sessionSchema = z.object({
   id,
   taskId: id,
   date: dateSchema,
-  minutes: z.number().int().min(0).max(1440),
-  type: z.enum(["首次学习", "复习", "练习"]),
+  minutes: z.number().min(0).max(1440),
+  seconds: z.number().int().min(0).max(86400).optional(),
+  source: z.enum(["manual", "timer"]).optional(),
+  superseded: z.boolean().optional(),
+  type: z.enum(["首次学习", "复习", "练习", "计时"]),
 });
 export const stateSchema = z.object({
   version: z.literal(2),
@@ -285,13 +291,18 @@ export function finishTask(s: State, id: string, date = localDate()) {
   t.status = "已完成";
   t.completedAt = new Date().toISOString();
   t.version++;
-  s.sessions.push({
-    id: uid(),
-    taskId: id,
-    date,
-    minutes: t.actualMinutes,
-    type: t.kind === "背诵" ? "首次学习" : "练习",
-  });
+  if (
+    !s.sessions.some(
+      (x) => x.taskId === id && x.type !== "复习" && !x.superseded,
+    )
+  )
+    s.sessions.push({
+      id: uid(),
+      taskId: id,
+      date,
+      minutes: t.actualMinutes,
+      type: t.kind === "背诵" ? "首次学习" : "练习",
+    });
   if (t.kind === "背诵") {
     for (const stage of [1, 3, 7, 14, 30])
       if (!s.reviews.some((r) => r.taskId === id && r.stage === stage))

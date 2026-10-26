@@ -6,6 +6,12 @@ import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { z } from "zod";
 import { Store } from "./db.js";
+import {
+  timeInputSchema,
+  recordTime,
+  duplicateTime,
+  setActualTime,
+} from "../shared/time.js";
 import { parseWorkbook, applyImport, type Parsed } from "./importer.js";
 import { propose, confirm } from "./scheduler.js";
 import { providers } from "./providers.js";
@@ -112,6 +118,13 @@ app.post("/api/tasks", (req, res) =>
           .parse(req.body.task.status ?? "未开始"),
       });
       s.tasks.push(t);
+      if (t.actualMinutes > 0)
+        setActualTime(
+          s,
+          t,
+          t.actualMinutes,
+          dateSchema.parse(req.body.recordDate ?? localDate()),
+        );
       audit(s, "新增任务", t.title);
       return t;
     }),
@@ -142,19 +155,34 @@ app.patch("/api/tasks/:id", (req, res) =>
         .parse(req.body.patch);
       if (patch.status === "已完成" || (t.status === "已完成" && patch.status))
         throw Error("请使用完成或撤销按钮修改完成状态");
+      if (
+        patch.actualMinutes !== undefined &&
+        patch.actualMinutes !== t.actualMinutes
+      )
+        setActualTime(
+          s,
+          t,
+          patch.actualMinutes,
+          dateSchema.parse(req.body.recordDate ?? localDate()),
+        );
       Object.assign(t, patch);
       t.version++;
-      if (t.status === "已完成") {
-        const first = s.sessions.find(
-          (x) => x.taskId === t.id && x.type !== "复习",
-        );
-        if (first) first.minutes = t.actualMinutes;
-      }
       audit(s, "修改任务", t.id);
       return t;
     }),
   ),
 );
+app.post("/api/time", (req, res) => {
+  const input = timeInputSchema.parse(req.body);
+  res.json(
+    store.mutate((s) => {
+      if (duplicateTime(s, input)) return { duplicate: true };
+      if (z.number().int().parse(req.body.revision) !== s.revision)
+        throw Error("数据已更新，请重试保存计时；本次计时保留在浏览器中");
+      return recordTime(s, input);
+    }),
+  );
+});
 app.post("/api/tasks/:id/:operation", (req, res) =>
   res.json(
     action(req, (s) => {
@@ -172,7 +200,7 @@ app.post("/api/tasks/:id/:operation", (req, res) =>
             (r) => r.taskId !== t.id || r.completedAt,
           );
           s.sessions = s.sessions.filter(
-            (x) => x.taskId !== t.id || x.type === "复习",
+            (x) => x.taskId !== t.id || x.type === "复习" || !!x.source,
           );
           break;
         case "delete":

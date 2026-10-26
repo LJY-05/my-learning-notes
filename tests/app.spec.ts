@@ -98,6 +98,7 @@ test("任务新增编辑、SQLite持久化、完成及唯一复习、延期与�
     .getByRole("navigation")
     .getByRole("button", { name: "学习计划", exact: true })
     .click();
+  await page.getByLabel("选定日期").fill("2026-10-23");
   await expect(card).toBeVisible();
   await card
     .getByRole("button", { name: "完成任务：浏览器验收背诵", exact: true })
@@ -502,4 +503,136 @@ test("DeepSeek模式保存与未配置密钥的明确提示", async ({ page }) =
     .click();
   await page.getByLabel("助手模式", { exact: true }).selectOption("mock");
   await expect(page.getByRole("status")).toContainText("已保存");
+});
+
+test("预计0也能独立记录实际用时，任务正计时倒计时、刷新恢复及不重复累计", async ({
+  page,
+}) => {
+  await page.clock.install({ time: new Date("2026-10-26T12:00:00") });
+  await page.clock.pauseAt(new Date("2026-10-26T12:01:00"));
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await page.getByRole("button", { name: "新增任务", exact: true }).click();
+  await page
+    .getByLabel("任务内容", { exact: true })
+    .fill("独立用时与专注计时验收");
+  await page.getByLabel("预计分钟（未知请留空）").fill("0");
+  await page.getByLabel("实际学习分钟", { exact: true }).fill("12.5");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  const read = () =>
+    page.request
+      .get("/api/state")
+      .then((r) => r.json())
+      .then((r) => r.state);
+  let state = await read();
+  let task = state.tasks.find((t: any) => t.title === "独立用时与专注计时验收");
+  expect(task.estimatedMinutes).toBeNull();
+  expect(task.actualMinutes).toBe(12.5);
+  expect(task.status).toBe("未开始");
+  await page
+    .getByRole("button", { name: "计时：独立用时与专注计时验收", exact: true })
+    .click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "正计时", exact: true }).click();
+  await dialog.getByRole("button", { name: "开始计时", exact: true }).click();
+  await page.clock.fastForward(61000);
+  await expect(page.getByLabel("计时显示")).toHaveText("01:01");
+  await dialog.getByRole("button", { name: "关闭窗口", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "打开正在进行的任务计时" }),
+  ).toContainText("01:01");
+  await page.reload();
+  await page.getByRole("button", { name: "打开正在进行的任务计时" }).click();
+  dialog = page.getByRole("dialog");
+  await expect(page.getByLabel("计时显示")).toHaveText("01:01");
+  await dialog.getByRole("button", { name: "暂停", exact: true }).click();
+  await page.clock.fastForward(30000);
+  await expect(page.getByLabel("计时显示")).toHaveText("01:01");
+  await dialog.getByRole("button", { name: "保存用时", exact: true }).click();
+  await expect(dialog.getByRole("status")).toContainText("已保存 01:01");
+  state = await read();
+  task = state.tasks.find((t: any) => t.id === task.id);
+  expect(task.actualMinutes).toBe(13.52);
+  expect(task.status).toBe("未开始");
+  const row = state.sessions.find(
+    (x: any) => x.taskId === task.id && x.source === "timer",
+  );
+  const duplicate = await page.request.post("/api/time", {
+    headers: { "X-StudyBuddy-Intent": "user" },
+    data: {
+      revision: 0,
+      runId: row.id.split(":")[1],
+      taskId: task.id,
+      entries: [{ date: row.date, seconds: 61 }],
+    },
+  });
+  expect(duplicate.ok()).toBe(true);
+  expect((await duplicate.json()).duplicate).toBe(true);
+  await dialog.getByRole("button", { name: "关闭窗口", exact: true }).click();
+  await page.reload();
+  await page.getByRole("button", { name: "打开专注计时", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await page.getByLabel("计时任务", { exact: true }).selectOption(task.id);
+  await page.getByLabel("倒计时分钟", { exact: true }).fill("1");
+  await dialog.getByRole("button", { name: "开始计时", exact: true }).click();
+  await page.clock.fastForward(61000);
+  await expect(page.getByLabel("计时显示")).toHaveText("00:00");
+  await expect(dialog.getByRole("status")).toContainText("倒计时结束");
+  await page.screenshot({
+    path: "test-results/artifacts/studybuddy-focus-timer.png",
+    fullPage: true,
+    animations: "disabled",
+  });
+  await dialog.getByRole("button", { name: "保存用时", exact: true }).click();
+  await expect(dialog.getByRole("status")).toContainText("已保存 01:00");
+  state = await read();
+  task = state.tasks.find((t: any) => t.id === task.id);
+  expect(task.actualMinutes).toBe(14.52);
+  expect(
+    state.sessions.filter(
+      (x: any) => x.taskId === task.id && x.source === "timer",
+    ),
+  ).toHaveLength(2);
+  await dialog.getByRole("button", { name: "关闭窗口", exact: true }).click();
+  await page
+    .getByRole("navigation")
+    .getByRole("button", { name: "学习计划", exact: true })
+    .click();
+  await page.getByLabel("选定日期").fill("2026-10-23");
+  await page
+    .getByRole("button", {
+      name: "完成任务：独立用时与专注计时验收",
+      exact: true,
+    })
+    .click();
+  state = await read();
+  expect(state.tasks.find((t: any) => t.id === task.id).actualMinutes).toBe(
+    14.52,
+  );
+  expect(
+    state.sessions
+      .filter((x: any) => x.taskId === task.id && !x.superseded)
+      .reduce((a: number, x: any) => a + x.minutes, 0),
+  ).toBeCloseTo(14.516667, 4);
+  await page
+    .getByRole("button", { name: "编辑：独立用时与专注计时验收", exact: true })
+    .click();
+  await page.getByLabel("实际学习分钟", { exact: true }).fill("10");
+  await page.getByRole("button", { name: "保存记录", exact: true }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  state = await read();
+  expect(state.tasks.find((t: any) => t.id === task.id).actualMinutes).toBe(10);
+  expect(
+    state.sessions
+      .filter((x: any) => x.taskId === task.id && !x.superseded)
+      .reduce((a: number, x: any) => a + x.minutes, 0),
+  ).toBe(10);
+  expect(
+    state.sessions.filter(
+      (x: any) => x.taskId === task.id && x.source === "timer",
+    ),
+  ).toHaveLength(2);
 });

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { minutesTotal } from "../shared/time.js";
 import {
   type State,
   dateSchema,
@@ -84,7 +85,7 @@ export function runTool(s: State, name: string, input: unknown) {
             .reduce((a, e) => a + e.total, 0),
           total: s.settings.subjectTwoTotal,
         },
-        studyMinutes: s.sessions.reduce((a, x) => a + x.minutes, 0),
+        studyMinutes: minutesTotal(s.sessions),
       };
     case "get_timetable":
       return (

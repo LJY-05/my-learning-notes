@@ -1225,3 +1225,145 @@ textarea:focus {
   color: var(--muted);
   font-size: 11px;
 }
+.focus-dock {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 35;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  border: 1px solid var(--accent);
+  background: var(--card);
+  color: var(--text);
+  border-radius: 9px;
+  padding: 12px 16px;
+  box-shadow: 0 5px 30px #0004;
+}
+.focus-dock span {
+  max-width: 260px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.focus-dock strong {
+  font-variant-numeric: tabular-nums;
+  color: var(--accent);
+  font-size: 18px;
+  white-space: nowrap;
+}
+.focus-dock small {
+  font-size: 10px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.focus-timer {
+  display: flex;
+  flex-direction: column;
+  gap: 17px;
+}
+.focus-timer .field {
+  width: 100%;
+}
+.focus-mode,
+.focus-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.focus-presets {
+  display: flex;
+  gap: 9px;
+  justify-content: center;
+}
+.focus-presets button {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--muted);
+  padding: 7px 13px;
+  font-size: 12px;
+}
+.focus-presets button.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: #a78bfa10;
+}
+.focus-clock {
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--accent) var(--focus-progress),
+    var(--line) 0
+  );
+  padding: 3px;
+  width: 245px;
+  height: 245px;
+  margin: 5px auto;
+}
+.focus-clock > div {
+  border-radius: 50%;
+  background: var(--card);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.focus-clock output {
+  font-size: 44px;
+  font-weight: 300;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.focus-clock small,
+.focus-clock span {
+  font-size: 11px;
+  color: var(--muted);
+}
+.focus-timer .notice {
+  margin: 0;
+}
+.focus-timer > .muted {
+  font-size: 11px;
+}
+.focus-launch-label {
+  font-size: 11px;
+}
+.task-meta span {
+  white-space: normal;
+}
+@media (max-width: 700px) {
+  .focus-launch-label {
+    display: none;
+  }
+  .focus-clock {
+    width: 205px;
+    height: 205px;
+  }
+  .focus-clock output {
+    font-size: 38px;
+  }
+  .focus-presets {
+    gap: 6px;
+  }
+  .focus-presets button {
+    font-size: 11px;
+    padding: 7px 10px;
+  }
+  .focus-dock {
+    bottom: 10px;
+    padding: 10px;
+    gap: 8px;
+  }
+  .focus-dock span {
+    max-width: 100px;
+  }
+  .focus-dock strong {
+    font-size: 15px;
+  }
+}

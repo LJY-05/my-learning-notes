@@ -51,6 +51,8 @@ import {
   progress,
   uid,
 } from "../shared/domain";
+import TaskTimer from "./components/TaskTimer";
+import { activeSessions, minutesTotal } from "../shared/time";
 import MarkdownEditor, { MarkdownView } from "./components/MarkdownEditor";
 import "./style.css";
 import "./workspace.css";
@@ -94,6 +96,10 @@ function App() {
     [date, setDate] = useState(localDate()),
     [query, setQuery] = useState(""),
     [menu, setMenu] = useState(false),
+    [focusRequest, setFocusRequest] = useState<{
+      taskId?: string;
+      nonce: number;
+    } | null>(null),
     [navCollapsed, setNavCollapsed] = useState(false),
     [openTabs, setOpenTabs] = useState([0, 2, 1]),
     [focusedTask, setFocusedTask] = useState<string | null>(null),
@@ -326,9 +332,7 @@ function App() {
             return {
               date: d.slice(5),
               完成率: progress(s, tasks).rate,
-              学习分钟: s.sessions
-                .filter((x) => x.date === d)
-                .reduce((a, x) => a + x.minutes, 0),
+              学习分钟: minutesTotal(s.sessions.filter((x) => x.date === d)),
             };
           })
         : [],
@@ -384,9 +388,17 @@ function App() {
               : `${t.estimatedMinutes} min`}
           </span>
           <span>{t.status}</span>
+          <span>实际 {t.actualMinutes} min</span>
           {t.priority === "高" && <Badge>优先完成</Badge>}
         </div>
       </div>
+      <Button
+        variant="ghost"
+        aria-label={`计时：${t.title}`}
+        onClick={() => setFocusRequest({ taskId: t.id, nonce: Date.now() })}
+      >
+        <Clock size={16} />
+      </Button>
       <Button
         variant="ghost"
         aria-label={`编辑：${t.title}`}
@@ -541,10 +553,17 @@ function App() {
         } = v;
         await mutate(
           "/tasks/" + encodeURIComponent(id),
-          { patch: { ...patch, ...(status !== "已完成" ? { status } : {}) } },
+          {
+            patch: { ...patch, ...(status !== "已完成" ? { status } : {}) },
+            recordDate: localDate(),
+          },
           "PATCH",
         );
-      } else await mutate("/tasks", { task: { ...v, source: "手动创建" } });
+      } else
+        await mutate("/tasks", {
+          task: { ...v, source: "手动创建" },
+          recordDate: localDate(),
+        });
     } else if (type === "teaching") {
       v.availableMinutes = Number(v.availableMinutes);
       await mutate("/teaching", { entry: v });
@@ -616,6 +635,9 @@ function App() {
         <input
           type={type}
           min={type === "number" ? 0 : undefined}
+          step={
+            type === "number" && key === "actualMinutes" ? "any" : undefined
+          }
           required={[
             "title",
             "name",
@@ -804,6 +826,14 @@ function App() {
             </span>
           </div>
           <div className="top-actions">
+            <Button
+              variant="ghost"
+              aria-label="打开专注计时"
+              onClick={() => setFocusRequest({ nonce: Date.now() })}
+            >
+              <Clock size={17} />
+              <span className="focus-launch-label">专注计时</span>
+            </Button>
             <label className="global-search">
               <Search size={15} />
               <input
@@ -938,9 +968,7 @@ function App() {
                 <div>
                   <span>今日实际学习</span>
                   <strong>
-                    {s.sessions
-                      .filter((x) => x.date === date)
-                      .reduce((a, x) => a + x.minutes, 0)}
+                    {minutesTotal(s.sessions.filter((x) => x.date === date))}
                     <small> min</small>
                   </strong>
                   <small>根据已记录学习时长</small>
@@ -2061,9 +2089,9 @@ function App() {
                   </strong>
                 </div>
                 <div>
-                  <span>首次学习 / 练习</span>
+                  <span>学习 / 练习记录</span>
                   <strong>
-                    {s.sessions.filter((x) => x.type !== "复习").length}
+                    {activeSessions(s).filter((x) => x.type !== "复习").length}
                     <small> 次</small>
                   </strong>
                 </div>
@@ -2093,13 +2121,13 @@ function App() {
                     data={["教综", "道德与法治", "行测", "面试"].map(
                       (subject) => ({
                         date: subject,
-                        学习分钟: s.sessions
-                          .filter(
+                        学习分钟: minutesTotal(
+                          s.sessions.filter(
                             (x) =>
                               s.tasks.find((t) => t.id === x.taskId)
                                 ?.subject === subject,
-                          )
-                          .reduce((a, x) => a + x.minutes, 0),
+                          ),
+                        ),
                       }),
                     )}
                     field="学习分钟"
@@ -2578,6 +2606,14 @@ function App() {
           </>
         )}
       </aside>
+      <TaskTimer
+        tasks={all}
+        sessions={s.sessions}
+        request={focusRequest}
+        onSave={async (input) => {
+          await mutate("/time", input);
+        }}
+      />
       {editor && (
         <Modal
           title={
@@ -2617,6 +2653,48 @@ function App() {
                   "number",
                 )}
                 {editorInput("actualMinutes", "实际学习分钟", "number")}
+                <p className="info-note wide">
+                  预计分钟可留空或填0（表示待补充），实际用时可独立保存，不必与Excel或AI建议相同。实际分钟是累计总用时；手动修改会替代统计总量，按本次保存日期记账，并保留原计时历史。
+                </p>
+                {editor.data.id && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="wide"
+                    onClick={() => {
+                      const id = editor.data.id;
+                      setEditor(null);
+                      setFocusRequest({ taskId: id, nonce: Date.now() });
+                    }}
+                  >
+                    <Clock size={16} />
+                    打开此任务的专注计时
+                  </Button>
+                )}
+                {editor.data.id && (
+                  <details className="wide">
+                    <summary>用时记录（含手动更正历史）</summary>
+                    {s.sessions
+                      .filter(
+                        (x) => x.taskId === editor.data.id && x.type !== "复习",
+                      )
+                      .map((x) => (
+                        <p className="muted" key={x.id}>
+                          {x.date} ·{" "}
+                          {x.source === "timer"
+                            ? "专注计时"
+                            : x.source === "manual"
+                              ? "手动记录"
+                              : "完成时记录"}{" "}
+                          ·{" "}
+                          {x.seconds !== undefined
+                            ? `${Math.floor(x.seconds / 60)}分${x.seconds % 60}秒`
+                            : `${x.minutes}分钟`}
+                          {x.superseded ? " · 已被手动总时长更正替代" : ""}
+                        </p>
+                      ))}
+                  </details>
+                )}
                 {editor.data.status !== "已完成" &&
                   editorInput("status", "任务状态", "text", [
                     "未开始",
