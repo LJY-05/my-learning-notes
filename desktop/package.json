@@ -1,0 +1,48 @@
+{
+  "name": "studybuddy-desktop",
+  "productName": "StudyBuddy",
+  "version": "1.1.0",
+  "description": "StudyBuddy personal learning workspace for Windows",
+  "author": "StudyBuddy",
+  "private": true,
+  "main": "main.cjs",
+  "scripts": {
+    "start": "node node_modules/electron/install.js && electron .",
+    "dist:win": "electron-builder --win zip --x64 --publish never",
+    "test": "node --test migration.test.cjs"
+  },
+  "devDependencies": {
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "com.studybuddy.desktop",
+    "productName": "StudyBuddy",
+    "asar": true,
+    "files": [
+      "main.cjs",
+      "generated/**/*",
+      "package.json",
+      "preload.cjs",
+      "settings.html",
+      "settings.cjs"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "artifactName": "StudyBuddy-Desktop-${version}-win-${arch}.${ext}",
+    "win": {
+      "target": [
+        "zip"
+      ],
+      "signAndEditExecutable": false
+    },
+    "asarUnpack": [
+      "generated/**/*"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LJY-05/my-learning-notes.git"
+  }
+}

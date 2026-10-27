@@ -2,6 +2,7 @@ import type { State } from "../shared/domain";
 export type Snapshot = {
   state: State;
   capabilities: {
+    desktop: boolean;
     openaiConfigured: boolean;
     model: string;
     deepseekConfigured: boolean;

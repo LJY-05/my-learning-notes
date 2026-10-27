@@ -2,6 +2,14 @@
 
 面向2027届道德与法治教招备考的学习管理应用。React + TypeScript + Vite、Tailwind CSS、基于 shadcn/ui 方式组织的 Radix 可访问组件、Lucide、Recharts；Express + Zod + SQLite，Drizzle 类型化表定义与 SQL 构造，Node 原生 SQLite 驱动负责事务。默认无需 API Key，Mock 规则助手可直接运行。
 
+## Windows 桌面版（推荐日常使用）
+
+已加入可双击运行的桌面版，自动启动并关闭本机服务，自带运行环境，不需要终端窗口。支持在软件内导入旧项目、迁移学习记录和AI配置，以及直接填写DeepSeek密钥。
+
+**请下载桌面构建附件，不是源码ZIP：** [Windows桌面版下载入口](https://github.com/LJY-05/my-learning-notes/actions/workflows/desktop-windows.yml)。进入最新成功构建，在底部Artifacts下载 `StudyBuddy-Windows-Desktop`，解压后双击 `StudyBuddy.exe`。
+
+[完整桌面使用与迁移说明](desktop/README.md)。以下 Node.js / npm / BAT 步骤用于网页版或开发者，桌面版日常运行不需要这些步骤。
+
 ## Obsidian 风格工作区更新
 
 界面采用炭灰背景、紫色强调色、窄工具栏、可折叠导航与可关闭工作区标签。宽度1550px及以上显示右侧学习上下文/任务属性；手机保留标签与抽屉导航。新数据库默认深色，已有用户的主题选择保留，可在右上角切换。
@@ -150,7 +158,6 @@ tests/                    Chromium全流程验收，隔离生产数据
 后端使用官方 `https://api.deepseek.com` 的 Chat Completions 流式接口，保留真实数据工具、最多6轮调用、SDK两次重试及用户确认机制。401提示检查密钥，402提示检查API余额，429提示稍后重试。模型名称可通过服务端环境变量调整；别名是否可用以官方当前文档为准。
 
 密钥不进入前端、状态接口或备份。普通学习功能和Mock继续可用。本项目自动测试使用模拟HTTP响应验证DeepSeek协议、分片工具参数、确认保护和失败处理；没有使用用户密钥，因此不代表真实账户联网/余额验证已通过。云环境使用真实DeepSeek时需要允许 `api.deepseek.com`。
-
 
 ## 任务用时修复与专注计时（2026-10-26）
 

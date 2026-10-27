@@ -6,3 +6,7 @@ playwright-report/
 .env
 data/*.sqlite*
 data/*.db*
+desktop/generated/
+desktop/release/
+.electron-cache/
+.electron-builder-cache/

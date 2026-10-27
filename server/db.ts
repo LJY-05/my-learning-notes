@@ -40,34 +40,7 @@ export class Store {
       this.save(emptyState());
   }
   read(): State {
-    const s = emptyState();
-    s.revision = Number(
-      this.db.prepare("SELECT revision FROM Metadata WHERE id=1").get()!
-        .revision,
-    );
-    s.settings = JSON.parse(
-      String(
-        this.db
-          .prepare("SELECT data FROM UserSettings WHERE id=?")
-          .get("default")!.data,
-      ),
-    );
-    for (const [key, table] of Object.entries(tables))
-      Object.assign(s, {
-        [key]: this.db
-          .prepare(
-            new QueryBuilder()
-              .select({
-                data: typedTables[key as keyof typeof typedTables].data,
-              })
-              .from(typedTables[key as keyof typeof typedTables])
-              .orderBy(sql`rowid`)
-              .toSQL().sql,
-          )
-          .all()
-          .map((r) => JSON.parse(String(r.data))),
-      });
-    return stateSchema.parse(s);
+    return readState(this.db);
   }
   save(input: State, expected?: number) {
     const s = stateSchema.parse(input);
@@ -141,4 +114,33 @@ export class Store {
   close() {
     this.db.close();
   }
+}
+
+export function readState(db: DatabaseSync): State {
+  const s = emptyState();
+  s.revision = Number(
+    db.prepare("SELECT revision FROM Metadata WHERE id=1").get()!.revision,
+  );
+  s.settings = JSON.parse(
+    String(
+      db.prepare("SELECT data FROM UserSettings WHERE id=?").get("default")!
+        .data,
+    ),
+  );
+  for (const [key, table] of Object.entries(tables))
+    Object.assign(s, {
+      [key]: db
+        .prepare(
+          new QueryBuilder()
+            .select({
+              data: typedTables[key as keyof typeof typedTables].data,
+            })
+            .from(typedTables[key as keyof typeof typedTables])
+            .orderBy(sql`rowid`)
+            .toSQL().sql,
+        )
+        .all()
+        .map((r) => JSON.parse(String(r.data))),
+    });
+  return stateSchema.parse(s);
 }

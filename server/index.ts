@@ -33,7 +33,11 @@ import {
   type State,
 } from "../shared/domain.js";
 const store = new Store();
-const source = resolve("public/StudyBuddy_备考计划_结合实习课表调整版.xlsx");
+const source =
+  process.env.STUDYBUDDY_WORKBOOK_PATH ||
+  resolve("public/StudyBuddy_备考计划_结合实习课表调整版.xlsx");
+const webRoot = process.env.STUDYBUDDY_WEB_ROOT || resolve("dist");
+const desktopToken = process.env.STUDYBUDDY_DESKTOP_TOKEN;
 if (!store.read().batches.length && existsSync(source))
   store.mutate((s) => {
     const r = applyImport(
@@ -59,6 +63,13 @@ app.use("/api", (req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   if (req.headers["sec-fetch-site"] === "cross-site")
     return res.status(403).json({ error: "不允许跨站请求" });
+  if (desktopToken) {
+    if (req.headers["x-studybuddy-desktop-token"] !== desktopToken)
+      return res.status(403).json({ error: "仅允许桌面应用访问" });
+    if (req.method !== "GET" && req.headers["x-studybuddy-intent"] !== "user")
+      return res.status(403).json({ error: "需要明确的用户操作" });
+    return next();
+  }
   const cookie = req.headers.cookie
     ?.split(";")
     .map((x) => x.trim())
@@ -97,6 +108,7 @@ app.get("/api/state", (_req, res) =>
     capabilities: {
       openaiConfigured: !!process.env.OPENAI_API_KEY,
       deepseekConfigured: !!process.env.DEEPSEEK_API_KEY,
+      desktop: !!desktopToken,
       deepseekModel: process.env.DEEPSEEK_MODEL || "deepseek-chat",
       model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
     },
@@ -492,12 +504,12 @@ app.post("/api/chat", async (req, res, next) => {
     next(e);
   }
 });
-app.use(express.static("dist"));
+app.use(express.static(webRoot));
 app.use((req, res) => {
   if (req.path.startsWith("/api/"))
     res.status(404).json({ error: "接口不存在" });
-  else if (existsSync(resolve("dist/index.html")))
-    res.sendFile(resolve("dist/index.html"));
+  else if (existsSync(resolve(webRoot, "index.html")))
+    res.sendFile(resolve(webRoot, "index.html"));
   else res.status(404).send("请先运行 npm run build");
 });
 app.use(
@@ -519,12 +531,29 @@ app.use(
   },
 );
 const port = Number(process.env.PORT || 3001);
-const server = app.listen(port, "127.0.0.1", () =>
+const server = app.listen(port, "127.0.0.1", () => {
+  const address = server.address();
+  const actualPort =
+    typeof address === "object" && address ? address.port : port;
   console.log(
-    `StudyBuddy API ready on port ${port}; SQLite revision ${store.read().revision}`,
-  ),
-);
+    `StudyBuddy API ready on port ${actualPort}; SQLite revision ${store.read().revision}`,
+  );
+  process.send?.({
+    type: "ready",
+    port: actualPort,
+    node: process.versions.node,
+  });
+});
+server.on("error", () => {
+  process.send?.({ type: "startup-error" });
+  process.exitCode = 1;
+  store.close();
+});
+let stopping = false;
 function stop() {
+  if (stopping) return;
+  stopping = true;
+  server.closeAllConnections();
   server.close(() => {
     store.close();
     process.exit(0);
@@ -532,3 +561,8 @@ function stop() {
 }
 process.on("SIGINT", stop);
 process.on("SIGTERM", stop);
+process.on("disconnect", stop);
+process.on("message", (m) => {
+  if (m && typeof m === "object" && "type" in m && m.type === "shutdown")
+    stop();
+});

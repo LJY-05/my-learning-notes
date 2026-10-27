@@ -1,0 +1,52 @@
+name: Build Windows Desktop
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      [
+        "desktop/**",
+        "src/**",
+        "shared/**",
+        "server/**",
+        "public/**",
+        "package*.json",
+        "vite.config.ts",
+        ".github/workflows/desktop-windows.yml",
+      ]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            desktop/package-lock.json
+      - run: npm ci
+      - run: npm --prefix desktop ci
+      - run: npm run desktop:prepare
+      - run: npm test
+      - run: npm --prefix desktop test
+      - run: npm --prefix desktop run dist:win
+      - run: node desktop/smoke.mjs
+      - run: node --import tsx desktop/ui.test.mjs desktop/release/win-unpacked/StudyBuddy.exe
+      - name: Verify desktop archive
+        shell: pwsh
+        run: |
+          $zip = Get-Item desktop/release/StudyBuddy-Desktop-*-win-x64.zip
+          Get-FileHash $zip -Algorithm SHA256 | Format-List
+          (Get-FileHash $zip -Algorithm SHA256).Hash + '  ' + $zip.Name | Set-Content desktop/release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: StudyBuddy-Windows-Desktop
+          path: |
+            desktop/release/StudyBuddy-Desktop-*-win-x64.zip
+            desktop/release/SHA256SUMS.txt
+          retention-days: 90

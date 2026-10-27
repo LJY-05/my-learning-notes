@@ -2342,17 +2342,26 @@ function App() {
                     {s.settings.provider === "deepseek"
                       ? snapshot.capabilities.deepseekConfigured
                         ? "服务端已配置DeepSeek密钥。"
-                        : "DeepSeek尚未配置。请按README在本机 .env 中设置密钥并重启。"
+                        : snapshot.capabilities.desktop
+                          ? "DeepSeek尚未配置。请在顶部菜单 StudyBuddy → AI 配置中保存密钥。"
+                          : "DeepSeek尚未配置。请按README在本机 .env 中设置密钥并重启。"
                       : snapshot.capabilities.openaiConfigured
                         ? "服务端已配置模型密钥。"
                         : "服务端尚未配置模型密钥。Mock 可直接使用。"}
                   </div>
-                  <p className="muted">
-                    DeepSeek 使用 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL（默认
-                    deepseek-chat）。密钥只放在服务端 .env。OpenAI 使用
-                    OPENAI_API_KEY。不要将密钥填入网页或聊天。OpenAI模型由
-                    OPENAI_MODEL 指定，默认 gpt-4.1-mini。
-                  </p>
+                  {snapshot.capabilities.desktop ? (
+                    <p className="info-note">
+                      桌面版请使用软件顶部菜单「StudyBuddy → AI
+                      配置」，直接保存密钥和模型名称，无需打开文件或终端。
+                    </p>
+                  ) : (
+                    <p className="muted">
+                      DeepSeek 使用 DEEPSEEK_API_KEY 和 DEEPSEEK_MODEL（默认
+                      deepseek-chat）。密钥只放在服务端 .env。OpenAI 使用
+                      OPENAI_API_KEY。不要将密钥填入网页或聊天。OpenAI模型由
+                      OPENAI_MODEL 指定，默认 gpt-4.1-mini。
+                    </p>
+                  )}
                   <h3>实习课表与负荷</h3>
                   <p>
                     {date} · {teaching?.confirmed ? "已确认" : "待确认"} ·{" "}

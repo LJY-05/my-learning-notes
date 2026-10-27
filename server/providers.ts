@@ -77,7 +77,9 @@ export class OpenAIProvider implements Provider {
   async reply(s: State, r: ChatRequest, emit: (text: string) => void) {
     if (!process.env.OPENAI_API_KEY)
       throw Error(
-        "服务端尚未配置 OPENAI_API_KEY，请在本机 .env 中设置，勿填入前端或聊天框",
+        process.env.STUDYBUDDY_DESKTOP_TOKEN
+          ? "OpenAI尚未配置，请在软件顶部菜单 StudyBuddy → AI 配置中保存密钥。"
+          : "服务端尚未配置 OPENAI_API_KEY，请在本机 .env 中设置，勿填入前端或聊天框",
       );
     const client = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY,

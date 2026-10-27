@@ -15,7 +15,9 @@ export class DeepSeekProvider implements Provider {
   ): Promise<string> {
     if (!this.injectedClient && !process.env.DEEPSEEK_API_KEY)
       throw Error(
-        "DeepSeek尚未配置：请在项目根目录的 .env 文件中设置 DEEPSEEK_API_KEY，然后重启。不要在聊天中发送密钥。",
+        process.env.STUDYBUDDY_DESKTOP_TOKEN
+          ? "DeepSeek尚未配置：请在软件顶部菜单 StudyBuddy → AI 配置中保存密钥，不要在聊天中发送密钥。"
+          : "DeepSeek尚未配置：请在项目根目录的 .env 文件中设置 DEEPSEEK_API_KEY，然后重启。不要在聊天中发送密钥。",
       );
     const client =
       this.injectedClient ??
