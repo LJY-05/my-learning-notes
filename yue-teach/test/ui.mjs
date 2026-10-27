@@ -6,7 +6,9 @@ import { tmpdir } from "node:os";
 import { openStore } from "../store.mjs";
 import { buildExtractiveQuiz, dayCN } from "../quiz.mjs";
 const root = mkdtempSync(join(tmpdir(), "yueteach-ui-"));
-let app, diagnosticPage, stage = 'launch';
+let app,
+  diagnosticPage,
+  stage = "launch";
 const packaged = process.argv[2];
 const executable = resolve(
   packaged ||
@@ -72,7 +74,7 @@ try {
   });
   const page = await app.firstWindow();
   diagnosticPage = page;
-  stage = 'home render';
+  stage = "home render";
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   if (process.platform === "linux")
@@ -93,7 +95,10 @@ try {
     path: "docs/previews/yue-teach-home.png",
     fullPage: true,
   });
-  stage = 'profile form';
+  // Windows runner实际客户区约1008x655；在Linux也覆盖较矮窗口，不能只测大屏。
+  if (process.platform === "linux")
+    await page.setViewportSize({ width: 1008, height: 655 });
+  stage = "profile form";
   await page.getByRole("button", { name: "个人档案与设置" }).click();
   await page.getByLabel("学士学位").selectOption("学士");
   await page.getByRole("button", { name: "保存档案", exact: true }).click();
@@ -101,7 +106,7 @@ try {
     async () =>
       (await (await fetch("/api/state")).json()).profile.degree === "学士",
   );
-  stage = 'AI config form';
+  stage = "AI config form";
   await page.getByLabel("DeepSeek API Key").fill("FAKE_UI_TEST_KEY_ONLY");
   await page.getByRole("button", { name: "保存 AI 设置" }).click();
   await page.waitForFunction(
@@ -115,33 +120,33 @@ try {
     ),
     false,
   );
-  stage = 'single choice';
+  stage = "single choice";
   await page.getByRole("button", { name: "每日 15 题" }).click();
   await page.getByRole("button", { name: "提交答案" }).waitFor();
   const wrong = (questions[0].answer[0] + 1) % 4;
   await page.locator(`[data-option="${wrong}"]`).click();
   await page.getByRole("button", { name: "提交答案" }).click();
   await page.getByText("再看一下原文", { exact: true }).waitFor();
-  stage = 'multiple choice';
+  stage = "multiple choice";
   await page.getByRole("button", { name: "下一题", exact: true }).click();
   await page.locator('[data-option="0"]').click();
   await page.locator('[data-option="1"]').click();
   await page.getByRole("button", { name: "提交答案" }).click();
   await page.getByText("回答正确", { exact: true }).waitFor();
-  stage = 'true or false';
+  stage = "true or false";
   await page.getByRole("button", { name: "下一题", exact: true }).click();
   await page.locator('[data-option="0"]').click();
   await page.getByRole("button", { name: "提交答案" }).click();
   await page.getByText("回答正确", { exact: true }).waitFor();
-  stage = 'mistakes';
+  stage = "mistakes";
   await page.getByRole("button", { name: "错题回看", exact: true }).click();
   await page.locator("details summary").click();
   await page.getByText("正确答案：", { exact: false }).waitFor();
-  stage = 'sources';
+  stage = "sources";
   await page.getByRole("button", { name: "来源与更新", exact: true }).click();
   await page.locator(".source-card").first().waitFor();
   assert.equal(await page.locator(".source-card").count(), 9);
-  stage = 'job filter';
+  stage = "job filter";
   await page.getByRole("button", { name: "招聘雷达", exact: true }).click();
   await page.getByRole("button", { name: "深圳", exact: true }).click();
   await page.getByText("这个范围暂时没有收录内容", { exact: true }).waitFor();
@@ -162,8 +167,20 @@ try {
     "Desktop UI passed: sandbox, settings, 3 question types, grading, mistakes, city filtering, persistence. Test fixtures are not real policies.",
   );
 } catch (error) {
-  const context = diagnosticPage ? await diagnosticPage.evaluate(() => ({url:location.href,width:innerWidth,height:innerHeight,body:document.body.innerText.slice(0,2200)})).catch(()=>null) : null;
-  const detail = `${stage}: ${error.message}; UI: ${JSON.stringify(context)}`.replace(/%/g,'%25').replace(/\r/g,'%0D').replace(/\n/g,'%0A');
+  const context = diagnosticPage
+    ? await diagnosticPage
+        .evaluate(() => ({
+          url: location.href,
+          width: innerWidth,
+          height: innerHeight,
+          body: document.body.innerText.slice(0, 2200),
+        }))
+        .catch(() => null)
+    : null;
+  const detail = `${stage}: ${error.message}; UI: ${JSON.stringify(context)}`
+    .replace(/%/g, "%25")
+    .replace(/\r/g, "%0D")
+    .replace(/\n/g, "%0A");
   console.error(`::error title=YueTeach UI diagnostic::${detail}`);
   throw error;
 } finally {

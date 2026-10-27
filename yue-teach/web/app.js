@@ -64,7 +64,7 @@ async function request(path, body) {
   return data;
 }
 async function refresh(renderPage = true) {
-  if (refreshing) return;
+  while (refreshing) await new Promise((resolve) => setTimeout(resolve, 20));
   refreshing = true;
   try {
     const previousDay = state?.day;
@@ -274,7 +274,7 @@ function settings() {
       "个人档案、练习方式和本机数据。",
       "MAKE IT YOURS",
     ) +
-    `<h2>我的报考档案</h2><p class="sub">初中政治教资不会自动匹配高中岗位。资格最终以公告和岗位表为准。</p><form id="profile-form" class="form"><label for="major">本科专业</label><input id="major" name="major" value="${esc(p.major)}" required><label for="graduation">毕业年份</label><input id="graduation" name="graduation" value="${esc(p.graduation)}" pattern="20[0-9]{2}" required><label for="qualification">教师资格证</label><select name="qualification" id="qualification">${["初中政治", "高中政治", "小学"].map((x) => `<option ${p.qualification === x ? "selected" : ""}>${x}</option>`).join("")}</select><label for="degree">学士学位</label><select name="degree" id="degree">${["待确认", "学士", "无"].map((x) => `<option ${p.degree === x ? "selected" : ""}>${x}</option>`).join("")}</select><button class="btn primary">保存档案</button></form><div class="divider"></div><h2>每日练习 · DeepSeek</h2><p class="sub">${state.hasKey ? "已保存密钥，不回显。留空保存可保留原密钥。" : "未配置：仍可自动生成免费的原文数字填空题。"}<br>接入后可生成单选、多选、判断题，会产生 DeepSeek API 费用；没有余额时会显示错误，不自动扣用其他服务。<br>密钥仅保存在本机数据目录的 ai-config.json（明文文件），不进入练习备份或 GitHub。</p><form id="config-form" class="form"><label for="api-key">DeepSeek API Key</label><input id="api-key" name="apiKey" type="password" autocomplete="off" placeholder="在自己电脑上填写，不要发到聊天里"><label class="check"><input type="checkbox" name="clear">清除已保存密钥，使用免费模式</label><button class="btn primary">保存 AI 设置</button></form><div class="divider"></div><h2>数据与使用</h2><p class="sub">程序打开时每 6 小时检查来源；电脑关机或应用关闭时不运行，下次启动补查。每日按北京时间换题。<br>本程序独立于 StudyBuddy，退出会自动停止内部服务。Windows 使用 Segoe UI／微软雅黑；苹果系统使用系统字体，不附带苹果商业字体。</p><button class="btn" data-action="export">导出资料与答题记录</button><p class="sub">备份不包含 API 密钥。桌面菜单可打开数据目录；更换版本保留该目录即可。</p>`
+    `<h2>我的报考档案</h2><p class="sub">初中政治教资不会自动匹配高中岗位。资格最终以公告和岗位表为准。</p><form id="profile-form" class="form"><label for="major">本科专业</label><input id="major" name="major" value="${esc(p.major)}" required><label for="graduation">毕业年份</label><input id="graduation" name="graduation" value="${esc(p.graduation)}" pattern="20[0-9]{2}" required><label for="qualification">教师资格证</label><select name="qualification" id="qualification">${["初中政治", "高中政治", "小学"].map((x) => `<option ${p.qualification === x ? "selected" : ""}>${x}</option>`).join("")}</select><label for="degree">学士学位</label><select name="degree" id="degree">${["待确认", "学士", "无"].map((x) => `<option ${p.degree === x ? "selected" : ""}>${x}</option>`).join("")}</select><button class="btn primary">保存档案</button></form><div class="divider"></div><h2>每日练习 · DeepSeek</h2><p class="sub"><span id="ai-state">${state.hasKey ? "已保存密钥，不回显。留空保存可保留原密钥。" : "未配置：仍可自动生成免费的原文数字填空题。"}</span><br>接入后可生成单选、多选、判断题，会产生 DeepSeek API 费用；没有余额时会显示错误，不自动扣用其他服务。<br>密钥仅保存在本机数据目录的 ai-config.json（明文文件），不进入练习备份或 GitHub。</p><form id="config-form" class="form"><label for="api-key">DeepSeek API Key</label><input id="api-key" name="apiKey" type="password" autocomplete="off" placeholder="在自己电脑上填写，不要发到聊天里"><label class="check"><input type="checkbox" name="clear">清除已保存密钥，使用免费模式</label><button class="btn primary">保存 AI 设置</button></form><div class="divider"></div><h2>数据与使用</h2><p class="sub">程序打开时每 6 小时检查来源；电脑关机或应用关闭时不运行，下次启动补查。每日按北京时间换题。<br>本程序独立于 StudyBuddy，退出会自动停止内部服务。Windows 使用 Segoe UI／微软雅黑；苹果系统使用系统字体，不附带苹果商业字体。</p><button class="btn" data-action="export">导出资料与答题记录</button><p class="sub">备份不包含 API 密钥。桌面菜单可打开数据目录；更换版本保留该目录即可。</p>`
   );
 }
 function render() {
@@ -463,7 +463,15 @@ document.addEventListener("submit", async (e) => {
       fields,
     );
     toast("已保存");
-    await refresh();
+    await refresh(form.id === "import-form" || page !== "settings");
+    if (form.id === "config-form" && page === "settings") {
+      $("#api-key").value = "";
+      $("#config-form [name=clear]").checked = false;
+      $("#ai-state").textContent = state.hasKey
+        ? "已保存密钥，不回显。留空保存可保留原密钥。"
+        : "未配置：使用免费的原文提取模式。";
+    }
+    button.disabled = false;
   } catch (err) {
     toast(err.message);
     button.disabled = false;
