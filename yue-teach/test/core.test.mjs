@@ -91,14 +91,29 @@ test("未知官网模板明确返回失败，而非显示没有新公告", async
     /未识别/,
   );
 });
-test('从首页发现官方文章、读取正文并去重', async () => {
-  const articleURL='https://edu.gd.gov.cn/content/post_12345.html';
-  const saved=[];
-  const load=async url=>({url,html:url===SOURCES[0].url?`<a href="${articleURL}">测试教育政策通知</a><a href="${articleURL}">测试重复链接</a>`:`<meta name="ArticleTitle" content="测试教育政策通知"><meta name="PubDate" content="2026-10-27"><div class="TRS_Editor">${'测试教育政策正文，非真实政策。'.repeat(20)}</div>`});
-  const first=await collectSource(SOURCES[0],{load,onArticle:a=>saved.push(a)});
-  assert.equal(first.count,1);assert.equal(saved.length,1);assert.equal(saved[0].date,today);
-  const second=await collectSource(SOURCES[0],{load,seen:new Set([articleURL]),onArticle:()=>assert.fail('不应重复导入')});
-  assert.equal(second.count,0);
+test("从首页发现官方文章、读取正文并去重", async () => {
+  const articleURL = "https://edu.gd.gov.cn/content/post_12345.html";
+  const saved = [];
+  const load = async (url) => ({
+    url,
+    html:
+      url === SOURCES[0].url
+        ? `<a href="${articleURL}">测试教育政策通知</a><a href="${articleURL}">测试重复链接</a>`
+        : `<meta name="ArticleTitle" content="测试教育政策通知"><meta name="PubDate" content="2026-10-27"><div class="TRS_Editor">${"测试教育政策正文，非真实政策。".repeat(20)}</div>`,
+  });
+  const first = await collectSource(SOURCES[0], {
+    load,
+    onArticle: (a) => saved.push(a),
+  });
+  assert.equal(first.count, 1);
+  assert.equal(saved.length, 1);
+  assert.equal(saved[0].date, today);
+  const second = await collectSource(SOURCES[0], {
+    load,
+    seen: new Set([articleURL]),
+    onArticle: () => assert.fail("不应重复导入"),
+  });
+  assert.equal(second.count, 0);
 });
 test("本科、专业关键词不构成报考结论，初中教资对高中岗位标风险", () => {
   const s = screenJob({
@@ -124,6 +139,13 @@ test("免费题目只引用近90天广东正文；生成稳定，答案与引用
     today,
   );
   assert.equal(questions.length, 15);
+  assert.ok(
+    questions.some(
+      (q) =>
+        parseFloat(q.options[q.answer[0]]) >
+        Math.min(...q.options.map(parseFloat)),
+    ),
+  );
   assert.deepEqual(questions, buildExtractiveQuiz(docs, today));
   for (const q of questions) {
     assert.ok(docs.some((d) => d.url === q.url && d.text.includes(q.evidence)));
@@ -210,15 +232,45 @@ test("本机API验证、密钥不回显、答题幂等、答案提交前隐藏",
     rmSync(root, { recursive: true, force: true });
   }
 });
-test('明确操作后才能复用本机StudyBuddy密钥，源文件保持不变', async () => {
-  const root=mkdtempSync(join(tmpdir(),'yueteach-key-test-'));
-  const old=join(root,'old.env'),previous=process.env.YUETEACH_STUDYBUDDY_ENV;
-  writeFileSync(old,'DEEPSEEK_API_KEY="FAKE_TEST_IMPORT_KEY_ONLY"\n');process.env.YUETEACH_STUDYBUDDY_ENV=old;
-  const app=await startServer({root:join(root,'new'),port:0,auto:false,token:'test-secret'});
-  try{
-    assert.equal(app.store.config().apiKey,undefined);
-    const r=await fetch(app.address+'/api/import-studybuddy',{method:'POST',headers:{'x-yueteach-token':'test-secret','x-yueteach-intent':'user','content-type':'application/json'},body:'{}'});
-    assert.equal(r.status,200);assert.equal(app.store.config().apiKey,'FAKE_TEST_IMPORT_KEY_ONLY');assert.equal(readFileSync(old,'utf8'),'DEEPSEEK_API_KEY="FAKE_TEST_IMPORT_KEY_ONLY"\n');
-    const state=await(await fetch(app.address+'/api/state',{headers:{'x-yueteach-token':'test-secret'}})).text();assert.equal(state.includes('FAKE_TEST_IMPORT_KEY_ONLY'),false);
-  }finally{await app.close();if(previous===undefined)delete process.env.YUETEACH_STUDYBUDDY_ENV;else process.env.YUETEACH_STUDYBUDDY_ENV=previous;rmSync(root,{recursive:true,force:true});}
+test("明确操作后才能复用本机StudyBuddy密钥，源文件保持不变", async () => {
+  const root = mkdtempSync(join(tmpdir(), "yueteach-key-test-"));
+  const old = join(root, "old.env"),
+    previous = process.env.YUETEACH_STUDYBUDDY_ENV;
+  writeFileSync(old, 'DEEPSEEK_API_KEY="FAKE_TEST_IMPORT_KEY_ONLY"\n');
+  process.env.YUETEACH_STUDYBUDDY_ENV = old;
+  const app = await startServer({
+    root: join(root, "new"),
+    port: 0,
+    auto: false,
+    token: "test-secret",
+  });
+  try {
+    assert.equal(app.store.config().apiKey, undefined);
+    const r = await fetch(app.address + "/api/import-studybuddy", {
+      method: "POST",
+      headers: {
+        "x-yueteach-token": "test-secret",
+        "x-yueteach-intent": "user",
+        "content-type": "application/json",
+      },
+      body: "{}",
+    });
+    assert.equal(r.status, 200);
+    assert.equal(app.store.config().apiKey, "FAKE_TEST_IMPORT_KEY_ONLY");
+    assert.equal(
+      readFileSync(old, "utf8"),
+      'DEEPSEEK_API_KEY="FAKE_TEST_IMPORT_KEY_ONLY"\n',
+    );
+    const state = await (
+      await fetch(app.address + "/api/state", {
+        headers: { "x-yueteach-token": "test-secret" },
+      })
+    ).text();
+    assert.equal(state.includes("FAKE_TEST_IMPORT_KEY_ONLY"), false);
+  } finally {
+    await app.close();
+    if (previous === undefined) delete process.env.YUETEACH_STUDYBUDDY_ENV;
+    else process.env.YUETEACH_STUDYBUDDY_ENV = previous;
+    rmSync(root, { recursive: true, force: true });
+  }
 });

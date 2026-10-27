@@ -71,15 +71,12 @@ export function buildExtractiveQuiz(docs, date = dayCN()) {
           : Math.max(1, Math.round(value * 0.15));
         const format = (n) => Number(n.toFixed(precision)).toString() + unit;
         const correct = m[1] + unit;
+        const distractors = [-1, 1, -2, 2, -3, 3]
+          .map((offset) => value + offset * delta)
+          .filter((n) => n >= 0 && (!/[%％]/.test(unit) || n <= 100))
+          .map(format);
         const options = rotate(
-          [
-            ...new Set([
-              correct,
-              format(value + delta),
-              format(value + 2 * delta),
-              format(value + 3 * delta),
-            ]),
-          ],
+          [...new Set([correct, ...distractors.slice(0, 3)])],
           date + sentence,
         );
         if (options.length !== 4) continue;
