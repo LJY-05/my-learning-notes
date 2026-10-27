@@ -8,6 +8,8 @@
 
 **请下载桌面构建附件，不是源码ZIP：** [Windows桌面版下载入口](https://github.com/LJY-05/my-learning-notes/actions/workflows/desktop-windows.yml)。进入最新成功构建，在底部Artifacts下载 `StudyBuddy-Windows-Desktop`，解压后双击 `StudyBuddy.exe`。
 
+已通过Windows自动构建及桌面运行检查，[本次可下载附件](https://github.com/LJY-05/my-learning-notes/actions/runs/40442051603#artifacts)。
+
 [完整桌面使用与迁移说明](desktop/README.md)。以下 Node.js / npm / BAT 步骤用于网页版或开发者，桌面版日常运行不需要这些步骤。
 
 ## Obsidian 风格工作区更新
