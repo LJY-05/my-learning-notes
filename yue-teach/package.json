@@ -1,0 +1,28 @@
+{
+  "name": "yue-teach",
+  "productName": "YueTeach",
+  "version": "1.0.0",
+  "description": "广东教招与教育时政个人工作台",
+  "author": "StudyBuddy",
+  "private": true,
+  "type": "module",
+  "main": "desktop.cjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
+    "desktop": "node node_modules/electron/install.js && electron .",
+    "dist:win": "electron-builder --win zip --x64 --publish never"
+  },
+  "dependencies": { "cheerio": "1.1.2" },
+  "devDependencies": { "electron": "45.0.0", "electron-builder": "26.18.0" },
+  "build": {
+    "appId": "com.studybuddy.yueteach",
+    "productName": "YueTeach",
+    "asar": true,
+    "asarUnpack": ["**/*"],
+    "files": ["*.mjs", "desktop.cjs", "web/**/*", "package.json", "!test/**/*"],
+    "artifactName": "YueTeach-${version}-win-${arch}.${ext}",
+    "directories": { "output": "release" },
+    "win": { "target": ["zip"], "signAndEditExecutable": false }
+  }
+}

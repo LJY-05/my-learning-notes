@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>粤教上岸 · 你的广东教招工作台</title>
+    <link rel="stylesheet" href="/style.css" />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <a class="brand" href="#home"
+          ><span class="logo">粤</span
+          ><span>粤教上岸<small>YOUR NEXT CHAPTER</small></span></a
+        >
+        <div class="workspace">
+          <span class="avatar">政</span>
+          <div>2027 · 思政上岸计划<small>四座城市，一条自己的路</small></div>
+        </div>
+        <nav aria-label="主要导航">
+          <button data-page="home" class="nav active">
+            <span>◫</span>我的工作台</button
+          ><button data-page="jobs" class="nav"><span>⌕</span>招聘雷达</button
+          ><button data-page="policy" class="nav">
+            <span>▤</span>政策与时政</button
+          ><button data-page="quiz" class="nav">
+            <span>◷</span>每日 15 题<span class="badge">15</span></button
+          ><button data-page="mistakes" class="nav">
+            <span>↺</span>错题回看</button
+          ><button data-page="saved" class="nav"><span>☆</span>我的收藏</button>
+        </nav>
+        <div class="side-label">我的目标城市</div>
+        <div class="cities">
+          <span>广州</span><span>深圳</span><span>惠州</span><span>肇庆</span>
+        </div>
+        <div class="side-note">慢慢积累，<br />也在靠近。</div>
+        <div class="side-bottom">
+          <button data-page="sources" class="nav">
+            <span>↗</span>来源与更新</button
+          ><button data-page="settings" class="nav">
+            <span>⚙</span>个人档案与设置
+          </button>
+          <div id="side-status" class="connection">○ 正在连接本机数据</div>
+        </div>
+      </aside>
+      <main>
+        <header class="topbar">
+          <button id="menu-toggle" aria-label="展开导航">☰</button
+          ><span id="breadcrumb">我的工作台</span
+          ><span class="top-right"
+            >广东教师招聘 · 个人版 <span class="tiny-dot"></span> 本地保存</span
+          >
+        </header>
+        <div id="content" class="content" aria-live="polite">
+          <p>正在打开你的工作台…</p>
+        </div>
+      </main>
+    </div>
+    <div id="toast" role="status" class="toast" hidden></div>
+    <dialog id="reader">
+      <div class="dialog-top">
+        <span>原文阅读与条件核对</span
+        ><button id="close-reader" aria-label="关闭">×</button>
+      </div>
+      <div id="reader-content"></div>
+    </dialog>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -8,5 +8,7 @@ data/*.sqlite*
 data/*.db*
 desktop/generated/
 desktop/release/
+yue-teach/release/
+yue-teach/data/
 .electron-cache/
 .electron-builder-cache/

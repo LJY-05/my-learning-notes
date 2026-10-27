@@ -1,0 +1,37 @@
+name: Build YueTeach Windows
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["yue-teach/**", ".github/workflows/yue-teach-windows.yml"]
+permissions:
+  contents: read
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: yue-teach/package-lock.json
+      - run: npm ci
+      - run: npm --prefix yue-teach ci
+      - run: npm --prefix yue-teach test
+      - run: npm --prefix yue-teach run dist:win
+      - run: node yue-teach/test/smoke.mjs yue-teach/release/win-unpacked/YueTeach.exe
+      - run: node yue-teach/test/ui.mjs yue-teach/release/win-unpacked/YueTeach.exe
+      - name: Archive checksum
+        shell: pwsh
+        run: |
+          $zip = Get-Item yue-teach/release/YueTeach-*-win-x64.zip
+          (Get-FileHash $zip -Algorithm SHA256).Hash + '  ' + $zip.Name | Set-Content yue-teach/release/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: YueTeach-Windows
+          path: |
+            yue-teach/release/YueTeach-*-win-x64.zip
+            yue-teach/release/SHA256SUMS.txt
+          retention-days: 90
