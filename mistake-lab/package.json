@@ -1,0 +1,41 @@
+{
+  "name": "mistake-lab",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0 --port 3100",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0 --port 3100",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write app components lib tests playwright.config.ts next.config.ts postcss.config.mjs package.json tsconfig.json README.md ARCHITECTURE.md",
+    "test": "tsx --test lib/*.test.ts",
+    "setup:ocr": "bash scripts/setup-ocr.sh",
+    "fixtures": "python3 scripts/make-fixtures.py && python3 scripts/make-pdf-fixtures.py",
+    "test:ocr": "tsx --test tests/ocr-native.test.ts",
+    "test:browser": "playwright test",
+    "dev:test": "next dev --hostname 127.0.0.1 --port 3107",
+    "pretest:ocr": "npm run fixtures",
+    "pretest:browser": "npm run fixtures",
+    "pretest": "npm run fixtures"
+  },
+  "dependencies": {
+    "@fontsource/cormorant-garamond": "^5.2.0",
+    "@fontsource/dm-sans": "^5.2.0",
+    "@radix-ui/react-dialog": "^1.1.0",
+    "lucide-react": "^0.468.0",
+    "next": "^16.0.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "prettier": "3.6.2",
+    "tailwindcss": "^4.1.0",
+    "tsx": "4.20.6",
+    "typescript": "^5.9.0"
+  }
+}

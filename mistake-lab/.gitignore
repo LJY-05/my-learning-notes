@@ -1,0 +1,16 @@
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+output/
+.playwright-cli/
+next-env.d.ts
+
+.next-test/
+test-results/
+playwright-report/
+
+# Local credentials and user-supplied learning materials
+.env*
+!.env.example
+uploads/
