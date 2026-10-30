@@ -321,7 +321,11 @@ export function ImportCenter() {
       <div className="import-heading">
         <div>
           <span className="import-caption">教辅资料导入中心</span>
-          <h1>A book, made yours.</h1>
+          <h1>
+            把一本书，
+            <br />
+            读成自己的。
+          </h1>
           <p>从原书到自己的题库。先选几页，逐题核对，再按章节整理。</p>
         </div>
         <MaterialWorkbench />
@@ -340,13 +344,38 @@ export function ImportCenter() {
         <fieldset disabled={busy}>
           <legend>选择资料与章节</legend>
           <div className="import-fields">
-            <label>
-              PDF 资料
+            <label
+              className={`pdf-dropzone ${file ? "has-file" : ""}`}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (!busy) {
+                  const dropped = e.dataTransfer.files[0];
+                  if (
+                    dropped &&
+                    (dropped.type === "application/pdf" ||
+                      dropped.name.toLowerCase().endsWith(".pdf"))
+                  ) {
+                    setFile(dropped);
+                    setError("");
+                  } else setError("请选择 PDF 资料。");
+                }
+              }}
+            >
+              <span className="pdf-drop-icon">
+                <FileText size={31} strokeWidth={1.2} />
+              </span>
+              <strong>{file ? file.name : "把你的习题册，带到这里。"}</strong>
+              <span>
+                {file
+                  ? `${(file.size / 1024 / 1024).toFixed(1)} MiB · 点击可更换文件`
+                  : "拖入 PDF，或点击选择文件"}
+              </span>
+              <small>题本、答案解析均可 · 单份不超过 128 MiB</small>
               <input
                 aria-label="导入 PDF 资料"
                 type="file"
                 accept="application/pdf,.pdf"
-                required
                 onChange={(e) => setFile(e.target.files?.[0] || null)}
               />
             </label>

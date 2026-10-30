@@ -78,9 +78,7 @@ function QuestionDetailContent({ id }: { id: string | null }) {
       <div className="page-heading">
         <div>
           <div className="eyebrow">A closer look</div>
-          <h1>
-            Understand the why<span className="title-dot">.</span>
-          </h1>
+          <h1>这一题，想明白。</h1>
           <p>慢一点，找到卡住的那一步。</p>
         </div>
         <div className="button-group">
@@ -846,9 +844,7 @@ function StudioWorkspace({ initialId }: { initialId: string }) {
       <div className="page-heading">
         <div>
           <div className="eyebrow">Beyond the right answer</div>
-          <h1>
-            AI Studio<span className="title-dot">.</span>
-          </h1>
+          <h1>给思路，开一扇窗。</h1>
           <p>把「为什么」多问一次，让理解更深一点。</p>
         </div>
         <span className="mock-badge">

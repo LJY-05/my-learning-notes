@@ -6,6 +6,7 @@ import "@fontsource/dm-sans/600.css";
 import "@fontsource/cormorant-garamond/500.css";
 import "@fontsource/cormorant-garamond/500-italic.css";
 import "./globals.css";
+import "./atelier.css";
 import { LabProvider } from "@/components/store";
 export const metadata: Metadata = {
   title: "MISTAKE LAB — 让每一次错误，成为下一步",

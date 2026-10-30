@@ -71,3 +71,13 @@ npm run build
 运行依赖 Python 3 + PyMuPDF（当前环境已有 1.26.6）；验收夹具还使用 reportlab。现有 OCR 依赖不变。文件最多 128 MiB，原始 PDF 保存在当前浏览器 IndexedDB，请留意浏览器配额；大教辅建议按章节拆分。临时服务器副本处理后删除。Word 暂不支持。
 
 附件访问状态、边界和验收见 [PDF_IMPORT_PLAN.md](PDF_IMPORT_PLAN.md)。六份聊天附件均超过工具 32 MiB 下载上限，尚未分析其真实内容。
+
+## 视觉更新
+
+新版采用 Frontend Design 指导的个人学习手册风格：窄导航、可点击书封与便签、书桌首页、纸卡错题，以及更宽的原书阅读区。设计与回归记录见 [UI_REDESIGN.md](UI_REDESIGN.md)。本次不改变 OCR 与答案人工确认逻辑。
+
+[查看手机界面](docs/design/home-mobile.png) · [查看原书阅读器](docs/design/reader-desktop.png)
+
+以下截图使用项目示例数据：
+
+![MISTAKE LAB 新版首页](docs/design/home-desktop.png)

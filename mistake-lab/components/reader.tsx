@@ -281,11 +281,9 @@ function ReaderWorkspace({ initialPage }: { initialPage: string }) {
     <>
       <div className="page-heading compact">
         <div>
-          <div className="eyebrow">From paper to possibility</div>
-          <h1>
-            Book Reader<span className="title-dot">.</span>
-          </h1>
-          <p>留住原书里的思路，把一道题认真收藏。</p>
+          <div className="eyebrow">Reading room</div>
+          <h1>翻一页，有新发现。</h1>
+          <p>从熟悉的书页里，找到还想再看一眼的题。</p>
         </div>
         <div className="button-group reader-actions">
           <MaterialWorkbench />
@@ -700,11 +698,11 @@ function ReaderWorkspace({ initialPage }: { initialPage: string }) {
             <span className="capture-symbol">
               <ScanLine size={21} />
             </span>
-            <h2>收集一个新发现</h2>
+            <h2>留住这一题。</h2>
             <p>
-              纸上的一道题，
+              拖动框选，把值得重看的部分
               <br />
-              也是知识拼图的一小块。
+              留在自己的错题本里。
             </p>
           </div>
           <div className="capture-steps">

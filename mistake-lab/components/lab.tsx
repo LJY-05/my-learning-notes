@@ -8,7 +8,6 @@ import {
   BookOpen,
   LayoutDashboard,
   Library,
-  ScanLine,
   Sparkles,
   RefreshCw,
   Search,
@@ -18,11 +17,7 @@ import {
   ArrowRight,
   Download,
   Check,
-  Flower2,
-  SlidersHorizontal,
   Bookmark,
-  MoreHorizontal,
-  Leaf,
 } from "lucide-react";
 import { useLab } from "./store";
 import { SectionTitle, Modal, Empty } from "./ui";
@@ -30,6 +25,7 @@ import dynamic from "next/dynamic";
 const ImportCenter = dynamic(() =>
   import("./import-center").then((m) => m.ImportCenter),
 );
+import { Dashboard } from "./dashboard";
 import { Reader } from "./reader";
 import { MaterialWorkbench } from "./material-workbench";
 import { QuestionDetail, Review, Studio } from "./learning";
@@ -112,7 +108,7 @@ export function Lab({ section }: { section: string }) {
     notify("学习档案已导出，包含原书图片与错题关联。");
   }
   return (
-    <div className="lab-shell">
+    <div className={`lab-shell section-${section}`}>
       <a className="skip-link" href="#main">
         跳到主要内容
       </a>
@@ -121,12 +117,26 @@ export function Lab({ section }: { section: string }) {
         inert={isMobile && !menu}
         className={`sidebar ${menu ? "is-open" : ""}`}
       >
-        <Link href="/" className="brand" onClick={() => setMenu(false)}>
-          <span className="brand-symbol">
-            <Flower2 size={27} strokeWidth={1.3} />
+        <Link
+          href="/"
+          aria-label="MISTAKE LAB 首页"
+          className="brand"
+          onClick={() => setMenu(false)}
+        >
+          <span className="brand-symbol" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none">
+              <path
+                d="M8 29V12l12 12 12-12v17"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <circle cx="20" cy="9" r="2" fill="currentColor" />
+            </svg>
           </span>
-          <span>
-            MISTAKE LAB<small>A little better, every day.</small>
+          <span className="rail-brand-name">
+            MISTAKE LAB<small>自己的学习实验室</small>
           </span>
         </Link>
         <button
@@ -136,9 +146,7 @@ export function Lab({ section }: { section: string }) {
         >
           <X />
         </button>
-        <div className="workspace-label">
-          Personal workspace <span>01</span>
-        </div>
+        <div className="workspace-label">我的空间</div>
         <nav aria-label="主导航">
           {navigation.map((n) => (
             <Link
@@ -150,28 +158,25 @@ export function Lab({ section }: { section: string }) {
             >
               <n.icon size={19} strokeWidth={1.6} />
               <span>
-                {n.en}
-                <small>{n.zh}</small>
+                {n.zh}
+                <small>{n.en}</small>
               </span>
               {n.key === "library" && <b>{data.questions.length}</b>}
             </Link>
           ))}
         </nav>
-        <div className="sidebar-note">
-          <span className="tiny-flower">✳</span>
-          <p>
-            每一道错题，
-            <br />
-            都藏着新的可能。
-          </p>
-          <button onClick={() => setHelp(true)}>
-            认识你的学习实验室 <ArrowUpRight size={14} />
-          </button>
-        </div>
+        <Link
+          className="rail-import-shortcut"
+          href="/import"
+          aria-label="导入新资料"
+        >
+          <Plus size={20} />
+          <span>带本新书来</span>
+        </Link>
         <div className="profile">
           <div className="avatar">知</div>
           <div>
-            <strong>知夏的学习空间</strong>
+            <strong>我的学习空间</strong>
             <small>Personal · 本地原型</small>
           </div>
           <button
@@ -202,11 +207,13 @@ export function Lab({ section }: { section: string }) {
           >
             <Menu />
           </button>
+          <Link href="/" className="topbar-wordmark">
+            MISTAKE LAB<span>让每个疑问，都有回响。</span>
+          </Link>
           <div className="breadcrumb">
-            Workspace <span>/</span>{" "}
             {section === "question"
-              ? "Question Detail"
-              : navigation.find((n) => n.key === section)?.en}
+              ? "题目手记"
+              : navigation.find((n) => n.key === section)?.zh}
           </div>
           <form
             className="global-search"
@@ -226,14 +233,14 @@ export function Lab({ section }: { section: string }) {
           </form>
           <span className="local-state">
             <i />
-            本地学习空间
+            已在本地记录
           </span>
           <button
             className="avatar small"
             onClick={() => setHelp(true)}
             aria-label="查看工作空间说明"
           >
-            知
+            我
           </button>
         </header>
         <main
@@ -311,293 +318,12 @@ export function Lab({ section }: { section: string }) {
     </div>
   );
 }
-function Botanical() {
-  return (
-    <svg
-      className="botanical"
-      viewBox="0 0 330 230"
-      fill="none"
-      aria-hidden="true"
-    >
-      <ellipse
-        cx="173"
-        cy="194"
-        rx="119"
-        ry="20"
-        fill="#294C3A"
-        opacity=".08"
-      />
-      <path d="M91 169L183 124L262 162L171 209Z" fill="#ABC19E" />
-      <path
-        d="M91 155L183 111L262 149L171 194Z"
-        fill="#F7F6E9"
-        stroke="#52765A"
-      />
-      <path d="M91 155V169L171 209V194M262 149V162" stroke="#52765A" />
-      <path d="M111 152L181 119L240 148L171 181Z" stroke="#B2C5A4" />
-      <path d="M171 181V194" stroke="#52765A" />
-      <path
-        d="M176 145C158 113 161 79 184 40"
-        stroke="#315D42"
-        strokeWidth="2"
-      />
-      <path
-        d="M170 116C139 112 125 91 133 76C157 76 173 91 170 116Z"
-        fill="#73946E"
-      />
-      <path
-        d="M173 98C196 99 221 86 223 65C198 61 176 73 173 98Z"
-        fill="#436E4E"
-      />
-      <path
-        d="M177 74C154 70 147 52 154 37C177 42 181 56 177 74Z"
-        fill="#A4B992"
-      />
-      <path
-        d="M184 47C205 46 216 27 207 15C188 20 180 32 184 47Z"
-        fill="#6E946A"
-      />
-      <circle cx="90" cy="62" r="29" stroke="#ACBEA2" strokeDasharray="2 5" />
-      <path d="M78 62H102M90 50V74" stroke="#738D69" />
-      <circle cx="267" cy="103" r="5" fill="#CBD9E0" />
-      <path
-        d="M246 29L250 39L260 43L250 47L246 57L242 47L232 43L242 39Z"
-        fill="#B9C9A5"
-      />
-    </svg>
-  );
-}
-function Dashboard() {
-  const { data } = useLab();
-  const due = data.questions.filter(
-    (q) => q.status !== "已掌握" && q.due <= today(),
-  );
-  const mastered = data.questions.filter((q) => q.status === "已掌握").length;
-  const recent = data.questions.slice(-4).reverse();
-  const learned = data.activity.reduce((s, a) => s + a.count, 0);
-  const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - 6 + i);
-    return {
-      label: ["日", "一", "二", "三", "四", "五", "六"][d.getDay()],
-      count:
-        data.activity.find(
-          (a) =>
-            a.date ===
-            d.toLocaleDateString("en-CA", { timeZone: "Asia/Shanghai" }),
-        )?.count || 0,
-    };
-  });
-  return (
-    <>
-      <div className="page-heading">
-        <div>
-          <div className="eyebrow">Your learning, in bloom</div>
-          <h1>
-            A fresh start,
-            <br className="mobile-break" /> every day
-            <span className="title-dot">.</span>
-          </h1>
-          <p>你好，知夏。把每一个「还不会」，变成「我懂了」。</p>
-        </div>
-        <Link className="button primary" href="/reader">
-          <Plus size={17} />
-          采集新错题
-        </Link>
-      </div>
-      <div className="dashboard-top">
-        <section className="hero-panel">
-          <div className="hero-copy">
-            <span className="pill">
-              <Leaf size={12} />
-              今日学习提案
-            </span>
-            <h2>
-              不急着全对。
-              <br />
-              先把这一题，<em>弄明白。</em>
-            </h2>
-            <p>
-              有 {due.length} 道错题等待与你重逢。
-              <br />
-              一次小小的复习，也是一点新的生长。
-            </p>
-            <Link className="button dark" href="/review">
-              开始今日复习 <ArrowRight size={16} />
-            </Link>
-          </div>
-          <Botanical />
-          <span className="hero-edition">Learning journal / No. 001</span>
-        </section>
-        <section className="today-panel">
-          <div className="panel-top">
-            <span>你的学习节奏</span>
-            <Flower2 size={20} strokeWidth={1} />
-          </div>
-          <div className="progress-orbit">
-            <svg viewBox="0 0 130 130" aria-hidden="true">
-              <circle
-                cx="65"
-                cy="65"
-                r="55"
-                fill="none"
-                stroke="#E7EADF"
-                strokeWidth="7"
-              />
-              <circle
-                cx="65"
-                cy="65"
-                r="55"
-                fill="none"
-                stroke="#45664D"
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeDasharray={`${data.questions.length ? (mastered / data.questions.length) * 345 : 0} 345`}
-                transform="rotate(-90 65 65)"
-              />
-            </svg>
-            <div>
-              <strong>
-                {data.questions.length
-                  ? Math.round((mastered / data.questions.length) * 100)
-                  : 0}
-                <small>%</small>
-              </strong>
-              <span>知识掌握度</span>
-            </div>
-          </div>
-          <p>每次回顾，都在靠近答案。</p>
-          <Link href="/library" className="text-link">
-            查看学习档案 <ArrowUpRight size={15} />
-          </Link>
-        </section>
-      </div>
-      <section className="stats-row" aria-label="学习统计">
-        {[
-          {
-            label: "收集的错题",
-            value: data.questions.length,
-            unit: "道",
-            icon: Library,
-            caption: "让困惑有迹可循",
-          },
-          {
-            label: "等待复习",
-            value: due.length,
-            unit: "道",
-            icon: RefreshCw,
-            caption: "给记忆一点时间",
-          },
-          {
-            label: "已经掌握",
-            value: mastered,
-            unit: "道",
-            icon: Check,
-            caption: "每一步，都算数",
-          },
-          {
-            label: "完成的复习",
-            value: learned,
-            unit: "次",
-            icon: Flower2,
-            caption: "慢慢积累的力量",
-          },
-        ].map((s) => (
-          <div className="stat" key={s.label}>
-            <div>
-              <span>{s.label}</span>
-              <s.icon size={17} strokeWidth={1.5} />
-            </div>
-            <strong>
-              {String(s.value).padStart(2, "0")}
-              <small>{s.unit}</small>
-            </strong>
-            <p>{s.caption}</p>
-          </div>
-        ))}
-      </section>
-      <div className="dashboard-bottom">
-        <section className="recent-section">
-          <SectionTitle
-            title="最近收集"
-            sub="每一个疑问，都值得被认真对待。"
-            action={
-              <Link className="text-link" href="/library">
-                全部错题 <ArrowUpRight size={16} />
-              </Link>
-            }
-          />
-          <div className="recent-list">
-            {recent.map((q, i) => (
-              <Link
-                href={`/question?id=${q.id}`}
-                className="recent-item"
-                key={q.id}
-              >
-                <span className={`subject-stamp stamp-${i}`}>
-                  {q.subject.slice(0, 1)}
-                </span>
-                <div>
-                  <span className="muted tiny">
-                    {q.book} <span className="separator">/</span> {q.topic}
-                  </span>
-                  <h3>{q.title}</h3>
-                </div>
-                <span
-                  className={`status ${q.status === "已掌握" ? "mastered" : ""}`}
-                >
-                  {q.status}
-                </span>
-                <ArrowUpRight size={16} />
-              </Link>
-            ))}
-          </div>
-        </section>
-        <section className="rhythm-panel">
-          <SectionTitle
-            title="一点点，积累起来"
-            sub="最近 7 天的真实复习记录"
-          />
-          <div className="week-chart">
-            {days.map((d, i) => (
-              <div key={i}>
-                <span className="chart-count">{d.count || ""}</span>
-                <div className="bar-track">
-                  <div
-                    style={{
-                      height: `${d.count ? Math.max(12, (d.count / Math.max(5, ...days.map((x) => x.count))) * 100) : 3}%`,
-                    }}
-                  />
-                </div>
-                <span>{d.label}</span>
-              </div>
-            ))}
-          </div>
-          <div className="chart-caption">
-            <span className="legend-dot" />
-            完成复习 <strong>{learned} 次累计</strong>
-          </div>
-          <p className="quiet-note">留白的日子，也可以重新开始。</p>
-        </section>
-      </div>
-      <Link className="studio-banner" href="/studio">
-        <span className="studio-icon">
-          <Sparkles size={22} strokeWidth={1.3} />
-        </span>
-        <div>
-          <h3>答案之外，还有「为什么」。</h3>
-          <p>走进 AI Studio，尝试拆解一道错题的思路。</p>
-        </div>
-        <span className="pill">Mock 体验</span>
-        <ArrowUpRight size={20} />
-      </Link>
-    </>
-  );
-}
 export function QuestionCard({ q }: { q: Question }) {
   const { setData, notify } = useLab();
   return (
-    <article className="question-card">
+    <article
+      className={`question-card subject-${q.subject === "数学" ? "math" : q.subject === "英语" ? "english" : "general"}`}
+    >
       <div className="card-meta">
         <span className="subject-label">
           {q.subject}
@@ -635,7 +361,7 @@ export function QuestionCard({ q }: { q: Question }) {
                 ? "ƒ(x)"
                 : q.subject === "英语"
                   ? "Aa"
-                  : "知"}
+                  : "?"}
             </span>
           </div>
         )}
@@ -733,11 +459,9 @@ function LibraryPage({
     <>
       <div className="page-heading library-heading">
         <div>
-          <div className="eyebrow">A collection of possibilities</div>
-          <h1>
-            Question Library<span className="title-dot">.</span>
-          </h1>
-          <p>把零散的困惑，整理成自己的知识地图。</p>
+          <div className="eyebrow">Question collection</div>
+          <h1>每一道，都算数。</h1>
+          <p>留住当时的疑问，找到现在的答案。</p>
         </div>
         <div className="button-group reader-actions">
           <MaterialWorkbench />
